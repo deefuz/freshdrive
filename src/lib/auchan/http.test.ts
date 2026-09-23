@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { AuchanHttp, AuchanHttpError, SessionExpiredError } from "./http";
+import { AuchanHttp, AuchanHttpError, RequestGate, SessionExpiredError } from "./http";
 
 const session = { cookieHeader: "a=1", consentId: "c" };
 
@@ -65,5 +65,16 @@ describe("AuchanHttp", () => {
     const res = new Response("<html/>", { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
     const http = new AuchanHttp(session, { fetchFn: async () => res, minIntervalMs: 0 });
     await expect(http.getJson("/cart")).rejects.toBeInstanceOf(SessionExpiredError);
+  });
+
+  it("deux clients qui partagent une RequestGate respectent l'intervalle entre eux", async () => {
+    const clock = fakeClock();
+    const gate = new RequestGate(350, clock.now, clock.sleep);
+    const fetchFn = vi.fn(async () => new Response("<html/>", { status: 200 }));
+    const a = new AuchanHttp(session, { fetchFn, gate });
+    const b = new AuchanHttp(session, { fetchFn, gate });
+    await a.getText("/x");
+    await b.getText("/y");
+    expect(clock.sleeps).toEqual([350]);
   });
 });

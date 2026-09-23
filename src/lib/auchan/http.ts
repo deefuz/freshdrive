@@ -27,32 +27,18 @@ export class SessionExpiredError extends Error {
   }
 }
 
-interface Options {
-  fetchFn?: typeof fetch;
-  minIntervalMs?: number;
-  now?: () => number;
-  sleep?: (ms: number) => Promise<void>;
-}
-
-export class AuchanHttp implements HttpClient {
-  private readonly fetchFn: typeof fetch;
-  private readonly minIntervalMs: number;
-  private readonly now: () => number;
-  private readonly sleep: (ms: number) => Promise<void>;
+/** Espacement minimal entre deux requêtes ; partageable entre plusieurs clients pour un débit global. */
+export class RequestGate {
   private last = Number.NEGATIVE_INFINITY;
   private queue: Promise<void> = Promise.resolve();
 
   constructor(
-    private readonly session: AuchanSession,
-    opts: Options = {},
-  ) {
-    this.fetchFn = opts.fetchFn ?? fetch;
-    this.minIntervalMs = opts.minIntervalMs ?? 350;
-    this.now = opts.now ?? Date.now;
-    this.sleep = opts.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
-  }
+    private readonly minIntervalMs: number = 350,
+    private readonly now: () => number = Date.now,
+    private readonly sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
+  ) {}
 
-  private throttle(): Promise<void> {
+  wait(): Promise<void> {
     const turn = this.queue.then(async () => {
       const wait = this.last + this.minIntervalMs - this.now();
       if (wait > 0) await this.sleep(wait);
@@ -61,9 +47,31 @@ export class AuchanHttp implements HttpClient {
     this.queue = turn.catch(() => undefined);
     return turn;
   }
+}
+
+interface Options {
+  fetchFn?: typeof fetch;
+  minIntervalMs?: number;
+  now?: () => number;
+  sleep?: (ms: number) => Promise<void>;
+  /** porte partagée ; sinon une porte propre à ce client (minIntervalMs, now, sleep) */
+  gate?: RequestGate;
+}
+
+export class AuchanHttp implements HttpClient {
+  private readonly fetchFn: typeof fetch;
+  private readonly gate: RequestGate;
+
+  constructor(
+    private readonly session: AuchanSession,
+    opts: Options = {},
+  ) {
+    this.fetchFn = opts.fetchFn ?? fetch;
+    this.gate = opts.gate ?? new RequestGate(opts.minIntervalMs ?? 350, opts.now, opts.sleep);
+  }
 
   private async request(path: string, init: RequestInit, extraHeaders: Record<string, string>): Promise<Response> {
-    await this.throttle();
+    await this.gate.wait();
     const res = await this.fetchFn(`${BASE_URL}${path}`, {
       ...init,
       headers: {

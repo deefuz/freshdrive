@@ -6,7 +6,7 @@ import { type ActionResult, failure, formValues, OK } from "@/lib/app/action-res
 import { getApp } from "@/lib/app/instance";
 import { ProfileSchema } from "@/lib/profile/profile";
 import { ProfileStore } from "@/lib/profile/store";
-import { parseBriefForm, withProfile } from "@/lib/week/brief-form";
+import { applyHousehold, parseBriefForm, withProfile } from "@/lib/week/brief-form";
 import { chooseProduct, setPantry, toggleRecipe } from "@/lib/week/edit";
 
 /** Exécute une opération du service ; en cas de succès, la page courante est rendue à nouveau. */
@@ -27,12 +27,15 @@ export async function checkSessionAction(): Promise<ActionResult> {
 }
 
 export async function createWeekAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
-  const parsed = parseBriefForm(formData);
+  // foyer de la semaine : membres du profil cochés et invités (ou nombres saisis sans profil)
+  const household = applyHousehold(formData, new ProfileStore().get());
+  if (!household.ok) return { error: household.error, values: formValues(formData) };
+  const parsed = parseBriefForm(household.form);
   if (!parsed.ok) return { error: parsed.error, values: formValues(formData) };
   const favoriteIds = formData.getAll("favorites").map(String);
   let id: string;
   try {
-    id = getApp().startCreateWeek(withProfile(parsed.brief, new ProfileStore().get()), favoriteIds).id;
+    id = getApp().startCreateWeek(withProfile(parsed.brief, household.profile), favoriteIds).id;
   } catch (e) {
     return failure(e, formValues(formData));
   }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { EMPTY_PROFILE } from "../profile/profile";
-import { DEFAULT_BRIEF, parseBriefForm, withProfile } from "./brief-form";
+import { applyHousehold, DEFAULT_BRIEF, parseBriefForm, withProfile } from "./brief-form";
 
 function form(entries: [string, string][]): FormData {
   const f = new FormData();
@@ -69,5 +69,52 @@ describe("withProfile", () => {
 
   it("retire le profil s'il est vide", () => {
     expect(withProfile(withProfile(DEFAULT_BRIEF, profile), EMPTY_PROFILE)).not.toHaveProperty("profile");
+  });
+});
+
+describe("applyHousehold", () => {
+  const member = (name: string, kind: "adult" | "child", allergies: ("peanuts" | "milk")[] = []) => ({
+    name,
+    kind,
+    age: null,
+    allergies,
+    otherAllergies: "",
+    dislikes: "",
+  });
+  const profile = {
+    ...EMPTY_PROFILE,
+    members: [member("Alex", "adult"), member("Sam", "adult", ["milk"]), member("Léa", "child", ["peanuts"])],
+  };
+
+  it("compte les présents et les invités, et ne garde que les présents dans le profil", () => {
+    const result = applyHousehold(
+      form([
+        ["present", "0"],
+        ["present", "2"],
+        ["guestAdults", "1"],
+        ["guestChildren", ""],
+      ]),
+      profile,
+    );
+    if (!result.ok) throw new Error(result.error);
+    expect(result.form.get("adults")).toBe("2");
+    expect(result.form.get("children")).toBe("1");
+    expect(result.profile.members.map((m) => m.name)).toEqual(["Alex", "Léa"]);
+  });
+
+  it("refuse une semaine sans adulte", () => {
+    expect(applyHousehold(form([["present", "2"]]), profile)).toEqual({
+      ok: false,
+      error: "Coche au moins un adulte, ou ajoute un invité adulte.",
+    });
+  });
+
+  it("refuse un nombre d'invités invalide", () => {
+    expect(applyHousehold(form([["present", "0"], ["guestChildren", "-1"]]), profile)).toMatchObject({ ok: false });
+  });
+
+  it("sans membre dans le profil : le formulaire est gardé tel quel", () => {
+    const f = form([["adults", "2"]]);
+    expect(applyHousehold(f, EMPTY_PROFILE)).toEqual({ ok: true, form: f, profile: EMPTY_PROFILE });
   });
 });

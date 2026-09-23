@@ -1,6 +1,6 @@
 @AGENTS.md
 
-# MyFresh : recettes générées dans Claude Code (sans clé API)
+# FreshDrive : recettes générées dans Claude Code (sans clé API)
 
 Déroulé d'une semaine sans clé API :
 1. L'utilisateur lance `npm run week -- --prepare`, ce qui écrit `data/requests/<date>.md`. La session Auchan est reprise automatiquement du Chrome habituel (cookies auchan.fr) ; si Auchan ne voit aucun drive, il faut se connecter sur auchan.fr dans Chrome.

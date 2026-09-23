@@ -149,7 +149,7 @@ export default async function SpendingPage() {
       ) : (
         <div className={`${card} px-6 py-10 text-center`}>
           <p className="mx-auto max-w-[48ch] text-graphite">
-            Prépare une semaine, vérifie le panier puis envoie-le : MyFresh gardera la trace de ce que tu as dépensé et
+            Prépare une semaine, vérifie le panier puis envoie-le : FreshDrive gardera la trace de ce que tu as dépensé et
             économisé.
           </p>
           <Link href="/semaines/nouvelle" className={`${btn.primary} mt-5`}>
@@ -194,7 +194,7 @@ export default async function SpendingPage() {
         <section className="space-y-4">
           <h2 className={sectionTitle}>Cagnotter cette semaine</h2>
           <p className="text-sm text-graphite">
-            Les offres Waaoh du moment qui rapportent le plus. MyFresh les propose à Claude pour les recettes et les
+            Les offres Waaoh du moment qui rapportent le plus. FreshDrive les propose à Claude pour les recettes et les
             préfère à prix égal quand il choisit les produits.
           </p>
           {offers.length ? (

@@ -85,7 +85,7 @@ export default async function CartPage({ params }: { params: Promise<{ id: strin
       <div className="space-y-4">
         {header}
         <p role="alert" className={notice.warning}>
-          Une tâche MyFresh est en cours sur une autre semaine : réessaie une fois qu&apos;elle est terminée.
+          Une tâche FreshDrive est en cours sur une autre semaine : réessaie une fois qu&apos;elle est terminée.
         </p>
       </div>
     );
@@ -119,8 +119,8 @@ export default async function CartPage({ params }: { params: Promise<{ id: strin
       ) : (
         <>
           <p className="max-w-[70ch] text-graphite">
-            Voici ce que MyFresh va mettre dans ton panier. Les quantités s&apos;ajoutent à ce qui s&apos;y trouve déjà.
-            MyFresh ne passe jamais commande : tu finaliseras sur auchan.fr.
+            Voici ce que FreshDrive va mettre dans ton panier. Les quantités s&apos;ajoutent à ce qui s&apos;y trouve déjà.
+            FreshDrive ne passe jamais commande : tu finaliseras sur auchan.fr.
           </p>
           <div className={`${card} overflow-x-auto`}>
             <table className="w-full text-sm">

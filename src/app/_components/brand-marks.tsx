@@ -1,4 +1,4 @@
-/** Pastilles-logos des services qu'utilise MyFresh. */
+/** Pastilles-logos des services qu'utilise FreshDrive. */
 
 const tile = "inline-flex size-10 shrink-0 items-center justify-center rounded-lg";
 

@@ -52,7 +52,7 @@ function tolerantArbiter(arbitrate: Arbiter, warnings: string[]): Arbiter {
     } catch (e) {
       if (!(e instanceof LlmError)) throw e;
       warnings.push(
-        `Vérification des produits par Claude impossible (${e.message}) : choix automatiques de MyFresh, à vérifier.`,
+        `Vérification des produits par Claude impossible (${e.message}) : choix automatiques de FreshDrive, à vérifier.`,
       );
       return new Map();
     }

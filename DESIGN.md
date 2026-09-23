@@ -1,5 +1,5 @@
 ---
-name: MyFresh
+name: FreshDrive
 description: Les dîners de la semaine choisis avec les promos Auchan Drive, façon box repas.
 colors:
   charcoal: "#232323"
@@ -137,13 +137,13 @@ components:
     padding: "16px 20px"
 ---
 
-# Design System: MyFresh
+# Design System: FreshDrive
 
 ## 1. Overview
 
 **Creative North Star: "La box du dimanche"**
 
-MyFresh se lit comme la page menu d'une box repas : une nappe crème, des cartes recettes posées dessus, des titres ronds et très gras qui donnent faim, et un bouton anthracite franc pour passer à l'action. Le système reprend de très près le langage visuel de HelloFresh (fond `#faf8f3`, anthracite `#232323`, vert citron `#91c11e`, pastilles contour, badges en capitales, pied de carte « 25 min | Rapide • Épicé ») parce que la familiarité est le but : on doit se sentir chez une box repas, pas dans un outil.
+FreshDrive se lit comme la page menu d'une box repas : une nappe crème, des cartes recettes posées dessus, des titres ronds et très gras qui donnent faim, et un bouton anthracite franc pour passer à l'action. Le système reprend de très près le langage visuel de HelloFresh (fond `#faf8f3`, anthracite `#232323`, vert citron `#91c11e`, pastilles contour, badges en capitales, pied de carte « 25 min | Rapide • Épicé ») parce que la familiarité est le but : on doit se sentir chez une box repas, pas dans un outil.
 
 C'est une interface produit : la couleur reste retenue. Le crème et le blanc cassé portent la page, l'anthracite porte le texte et les actions, et la couleur n'apparaît qu'avec un sens : citron pour la marque et la sélection, basilic pour l'argent économisé et ce qui va bien, tomate pour le budget dépassé et les suppressions, miel pour « à vérifier ». Les badges colorés (betterave, myrtille) sont rares et en capitales, comme les étiquettes « NOUVEAU » de HelloFresh.
 

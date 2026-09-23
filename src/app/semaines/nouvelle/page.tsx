@@ -35,7 +35,7 @@ export default async function NewWeekPage({
       <div className="space-y-2">
         <h1 className={pageTitle}>Nouvelle semaine</h1>
         <p className="max-w-[65ch] text-graphite">
-          Pré-rempli avec ta dernière semaine. MyFresh propose deux recettes de plus que le nombre de dîners, pour que
+          Pré-rempli avec ta dernière semaine. FreshDrive propose deux recettes de plus que le nombre de dîners, pour que
           tu puisses choisir. Le foyer, les allergies, le matériel et les habitudes viennent de{" "}
           <Link href="/profil" className={link}>
             ton profil

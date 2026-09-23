@@ -11,7 +11,7 @@ export function buildRequestDocument(
   outputPath: string,
   options: MenuPromptOptions = {},
 ): string {
-  return `# Demande de menu MyFresh
+  return `# Demande de menu FreshDrive
 
 À traiter par Claude Code : génère le menu décrit ci-dessous et écris-le dans \`${outputPath}\`
 au format JSON \`{ "recipes": [...] }\`, conforme au schéma en fin de document.

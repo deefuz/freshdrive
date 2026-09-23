@@ -92,7 +92,7 @@ function sqliteJson<T>(dbPath: string, sql: string): T[] {
 
 /** Copie la base (Chrome la verrouille) puis lit les cookies auchan.fr. */
 function readProfile(profileDir: string): { rows: ChromeCookieRow[]; dbVersion: number } {
-  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "myfresh-cookies-"));
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "freshdrive-cookies-"));
   try {
     const db = path.join(tmp, "Cookies");
     fs.copyFileSync(path.join(profileDir, "Cookies"), db);

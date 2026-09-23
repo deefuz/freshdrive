@@ -61,7 +61,7 @@ export async function pdfResponse(request: Request, id: string, deps: PdfDeps): 
   return new Response(new Uint8Array(pdf), {
     headers: {
       "content-type": "application/pdf",
-      "content-disposition": `${disposition}; filename="myfresh-${week.id}.pdf"`,
+      "content-disposition": `${disposition}; filename="freshdrive-${week.id}.pdf"`,
       "cache-control": "no-store",
     },
   });

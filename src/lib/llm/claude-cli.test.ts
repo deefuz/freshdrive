@@ -98,7 +98,7 @@ describe("nodeExec", () => {
   });
 
   it("signale une commande introuvable", async () => {
-    const r = await nodeExec("myfresh-commande-inexistante", [], { timeoutMs: 1000 });
+    const r = await nodeExec("freshdrive-commande-inexistante", [], { timeoutMs: 1000 });
     expect(r.notFound).toBe(true);
   });
 });

@@ -61,7 +61,7 @@ let dir: string;
 let store: WeekStore;
 let connector: FakeConnector;
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), "myfresh-wf-"));
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), "freshdrive-wf-"));
   store = new WeekStore(dir);
   connector = new FakeConnector({
     tomates: [tomates],
@@ -178,7 +178,7 @@ describe("runCreateWeek", () => {
     expect(week.status).toBe("ready");
     expect(week.matches.find((m) => m.need.key === "pates|g")?.chosen?.product.name).toBe("Pâtes");
     expect(week.warnings).toEqual([
-      "Vérification des produits par Claude impossible (Claude Code n'a pas répondu en 10 min.) : choix automatiques de MyFresh, à vérifier.",
+      "Vérification des produits par Claude impossible (Claude Code n'a pas répondu en 10 min.) : choix automatiques de FreshDrive, à vérifier.",
     ]);
   });
 

@@ -21,7 +21,7 @@ describe("pdfResponse", () => {
     const { deps, render } = setup();
     const res = await pdfResponse(request("?affichage=1"), "2026-09-23-1", deps);
     expect(res.status).toBe(200);
-    expect(res.headers.get("content-disposition")).toBe('inline; filename="myfresh-2026-09-23-1.pdf"');
+    expect(res.headers.get("content-disposition")).toBe('inline; filename="freshdrive-2026-09-23-1.pdf"');
     expect(render.mock.calls[0][0]).not.toContain("affichage");
   });
 
@@ -30,7 +30,7 @@ describe("pdfResponse", () => {
     const res = await pdfResponse(request("?famille=Martin&sections=courses&o=1&pirate=1"), "2026-09-23-1", deps);
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toBe("application/pdf");
-    expect(res.headers.get("content-disposition")).toBe('attachment; filename="myfresh-2026-09-23-1.pdf"');
+    expect(res.headers.get("content-disposition")).toBe('attachment; filename="freshdrive-2026-09-23-1.pdf"');
     expect(new Uint8Array(await res.arrayBuffer())).toEqual(PDF_BYTES);
     expect(render).toHaveBeenCalledWith(`${LOCAL_APP_URL}/semaines/2026-09-23-1/imprimer?famille=Martin&sections=courses&o=1`);
     expect(LOCAL_APP_URL).toBe("http://127.0.0.1:3141");
@@ -111,10 +111,10 @@ describe("pdfResponse", () => {
   });
 });
 
-// Lance un vrai Chromium : seulement avec MYFRESH_PDF_SMOKE=1 (npx playwright install chromium au préalable).
-describe.skipIf(!process.env.MYFRESH_PDF_SMOKE)("createPlaywrightPdfRenderer (smoke)", () => {
+// Lance un vrai Chromium : seulement avec FRESHDRIVE_PDF_SMOKE=1 (npx playwright install chromium au préalable).
+describe.skipIf(!process.env.FRESHDRIVE_PDF_SMOKE)("createPlaywrightPdfRenderer (smoke)", () => {
   it("rend une page HTML en PDF", async () => {
-    const html = "<html><body><h1>Bonjour MyFresh</h1></body></html>";
+    const html = "<html><body><h1>Bonjour FreshDrive</h1></body></html>";
     const pdf = await createPlaywrightPdfRenderer()(`data:text/html,${encodeURIComponent(html)}`);
     expect(new TextDecoder().decode(pdf.slice(0, 5))).toBe("%PDF-");
   }, 60_000);

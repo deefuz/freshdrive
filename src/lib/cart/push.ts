@@ -9,7 +9,7 @@ export interface PushPreviewRow {
   productName: string;
   ingredients: string[];
   url: string;
-  /** paquets ajoutés par MyFresh */
+  /** paquets ajoutés par FreshDrive */
   packs: number;
   /** quantité déjà dans le panier Auchan */
   inCart: number;

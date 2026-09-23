@@ -18,7 +18,7 @@ const brief: Brief = {
 
 let dir: string;
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), "myfresh-weeks-"));
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), "freshdrive-weeks-"));
 });
 afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
 

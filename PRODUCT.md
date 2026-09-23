@@ -6,13 +6,13 @@ product
 
 ## Users
 
-Un foyer (parents, enfants) qui fait ses courses au drive Auchan. La personne qui planifie ouvre MyFresh une fois par semaine, souvent le dimanche après-midi, sur un portable posé sur la table de la cuisine : elle choisit les dîners de la semaine, vérifie le budget, ajuste les produits, puis remplit le panier Auchan. En semaine, le soir, on cuisine à partir des fiches imprimées (PDF A4), parfois avec les enfants.
+Un foyer (parents, enfants) qui fait ses courses au drive Auchan. La personne qui planifie ouvre FreshDrive une fois par semaine, souvent le dimanche après-midi, sur un portable posé sur la table de la cuisine : elle choisit les dîners de la semaine, vérifie le budget, ajuste les produits, puis remplit le panier Auchan. En semaine, le soir, on cuisine à partir des fiches imprimées (PDF A4), parfois avec les enfants.
 
 Le travail à accomplir : « des dîners qui donnent envie, pour toute la famille, dans le budget, sans passer une heure à faire la liste de courses ».
 
 ## Product Purpose
 
-MyFresh reproduit l'expérience d'une box repas type HelloFresh, mais avec les produits et les promos d'Auchan Drive. Claude propose des recettes adaptées à la semaine (promos en cours, saison, contraintes du foyer), MyFresh associe chaque ingrédient à un produit Auchan, calcule le coût réel du panier, puis l'ajoute au panier Auchan sans jamais passer commande.
+FreshDrive reproduit l'expérience d'une box repas type HelloFresh, mais avec les produits et les promos d'Auchan Drive. Claude propose des recettes adaptées à la semaine (promos en cours, saison, contraintes du foyer), FreshDrive associe chaque ingrédient à un produit Auchan, calcule le coût réel du panier, puis l'ajoute au panier Auchan sans jamais passer commande.
 
 Réussir, c'est : choisir sa semaine en quelques minutes, rester dans le budget, savoir exactement ce qui part au panier, et cuisiner sereinement à partir de fiches claires.
 

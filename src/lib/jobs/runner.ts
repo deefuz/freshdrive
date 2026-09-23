@@ -48,7 +48,7 @@ export class JobRunner {
       try {
         this.opts.onUpdate?.({ ...state });
       } catch (e) {
-        console.error(`MyFresh : état de la tâche non enregistré (${(e as Error).message})`);
+        console.error(`FreshDrive : état de la tâche non enregistré (${(e as Error).message})`);
       }
     };
     emit();

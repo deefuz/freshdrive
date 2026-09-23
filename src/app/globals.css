@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Thème MyFresh (voir DESIGN.md) : nappe crème, encre anthracite, couleurs de légumes au sens précis */
+/* Thème FreshDrive (voir DESIGN.md) : nappe crème, encre anthracite, couleurs de légumes au sens précis */
 @theme {
   --color-*: initial;
   --color-transparent: transparent;

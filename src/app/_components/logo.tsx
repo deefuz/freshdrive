@@ -1,4 +1,4 @@
-/** Logo MyFresh : un citron vert et le nom sur deux lignes, en capitales grasses. */
+/** Logo FreshDrive : un citron vert et le nom sur deux lignes, en capitales grasses. */
 export function Logo() {
   return (
     <span className="inline-flex items-center gap-2">

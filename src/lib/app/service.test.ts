@@ -11,7 +11,7 @@ import type { LlmBackend } from "../llm/backend";
 import type { Brief } from "../recipes/brief";
 import { favoriteId as favoriteIdOf, FavoriteStore } from "../store/favorites";
 import { WeekStore } from "../store/weeks";
-import { ActionError, ADD_RECIPES_COUNT, type AppDeps, MAX_WEEK_RECIPES, MyFreshApp } from "./service";
+import { ActionError, ADD_RECIPES_COUNT, type AppDeps, MAX_WEEK_RECIPES, FreshDriveApp } from "./service";
 
 const brief: Brief = { dinners: 1, adults: 2, children: 0, budgetEur: 30, filters: [], notes: "", preferOrganic: false };
 const ctx: WeeklyContext = {
@@ -46,7 +46,7 @@ function blocker() {
 
 let dir: string;
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), "myfresh-app-"));
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), "freshdrive-app-"));
 });
 afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
 
@@ -57,7 +57,7 @@ function setup(backend: LlmBackend = fakeBackend({ generateMenu: vi.fn(async () 
   });
   const store = new WeekStore(dir);
   const favorites = new FavoriteStore(path.join(dir, "favoris", "favorites.json"));
-  const app = new MyFreshApp({
+  const app = new FreshDriveApp({
     store,
     favorites,
     backend: () => backend,
@@ -69,7 +69,7 @@ function setup(backend: LlmBackend = fakeBackend({ generateMenu: vi.fn(async () 
   return { app, store, favorites, connector };
 }
 
-describe("MyFreshApp", () => {
+describe("FreshDriveApp", () => {
   it("startCreateWeek : crée la semaine, suit la tâche et enregistre l'état final", async () => {
     const { app } = setup();
     const week = app.startCreateWeek(brief);

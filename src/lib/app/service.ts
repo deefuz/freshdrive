@@ -39,7 +39,7 @@ export const ADD_RECIPES_COUNT = 3;
 /** plafond de recettes proposées dans une semaine (N+2 au départ, puis ajouts) */
 export const MAX_WEEK_RECIPES = 20;
 
-export class MyFreshApp {
+export class FreshDriveApp {
   readonly store: WeekStore;
   readonly favorites: FavoriteStore;
   readonly runner: JobRunner;

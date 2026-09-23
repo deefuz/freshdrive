@@ -9,7 +9,7 @@ import { loadWeeklyContext, readCachedContext } from "./cache";
 let dir: string;
 let cachePath: string;
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), "myfresh-ctx-"));
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), "freshdrive-ctx-"));
   cachePath = path.join(dir, "cache", "context.json");
 });
 afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));

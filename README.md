@@ -1,12 +1,12 @@
-# MyFresh
+# FreshDrive
 
 Une box repas façon HelloFresh, mais avec **ton** drive Auchan.
 
-Chaque semaine, MyFresh demande à Claude des recettes de dîner adaptées à ton foyer (allergies, matériel, goûts, budget) et aux promos Auchan du moment. Il trouve les produits correspondants sur auchan.fr, calcule le coût réel du panier (promos et cagnotte Waaoh comprises), puis remplit ton panier Auchan. **Il ne passe jamais commande** : tu choisis ton créneau et tu paies toi-même sur auchan.fr.
+Chaque semaine, FreshDrive demande à Claude des recettes de dîner adaptées à ton foyer (allergies, matériel, goûts, budget) et aux promos Auchan du moment. Il trouve les produits correspondants sur auchan.fr, calcule le coût réel du panier (promos et cagnotte Waaoh comprises), puis remplit ton panier Auchan. **Il ne passe jamais commande** : tu choisis ton créneau et tu paies toi-même sur auchan.fr.
 
 Tu obtiens aussi des fiches recettes et une liste de courses à imprimer (PDF A4), un suivi de tes dépenses et tes recettes favorites.
 
-> Projet personnel, sans lien avec HelloFresh ni Auchan. MyFresh utilise le site auchan.fr avec ton propre compte, comme tu le ferais dans ton navigateur (une requête toutes les 350 ms au plus). À utiliser pour toi, à tes risques.
+> Projet personnel, sans lien avec HelloFresh ni Auchan. FreshDrive utilise le site auchan.fr avec ton propre compte, comme tu le ferais dans ton navigateur (une requête toutes les 350 ms au plus). À utiliser pour toi, à tes risques.
 
 ## Ce qu'il te faut
 
@@ -17,15 +17,15 @@ Tu obtiens aussi des fiches recettes et une liste de courses à imprimer (PDF A4
 | **Claude** | au choix : **Claude Code** connecté à ton abonnement Claude (Pro ou Max), **ou** une clé d'API Anthropic (payante à l'usage). |
 | **Git** | pour récupérer le projet. |
 
-Le projet tourne sur macOS, Linux et Windows. Sur macOS, MyFresh reprend tout seul ta session Auchan de Google Chrome ; ailleurs, tu te connectes une fois dans une fenêtre dédiée (voir plus bas).
+Le projet tourne sur macOS, Linux et Windows. Sur macOS, FreshDrive reprend tout seul ta session Auchan de Google Chrome ; ailleurs, tu te connectes une fois dans une fenêtre dédiée (voir plus bas).
 
 ## Installation
 
 ### 1. Récupérer le projet
 
 ```bash
-git clone https://github.com/<ton-pseudo-github>/myfresh.git
-cd myfresh
+git clone https://github.com/<ton-pseudo-github>/freshdrive.git
+cd freshdrive
 npm install
 npx playwright install chromium
 ```
@@ -34,7 +34,7 @@ Chromium (installé par Playwright) sert à produire les PDF et à la connexion 
 
 ### 2. Brancher Claude
 
-**Option A, abonnement Claude (recommandée).** Installe [Claude Code](https://claude.com/claude-code), lance `claude` une fois dans un terminal et connecte-toi. MyFresh l'appelle ensuite tout seul (`claude -p`) : rien d'autre à configurer.
+**Option A, abonnement Claude (recommandée).** Installe [Claude Code](https://claude.com/claude-code), lance `claude` une fois dans un terminal et connecte-toi. FreshDrive l'appelle ensuite tout seul (`claude -p`) : rien d'autre à configurer.
 
 **Option B, clé d'API.** Crée une clé sur [console.anthropic.com](https://console.anthropic.com), puis un fichier `.env.local` à la racine du projet :
 
@@ -42,13 +42,13 @@ Chromium (installé par Playwright) sert à produire les PDF et à la connexion 
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-Si cette variable existe, MyFresh passe par l'API ; sinon, par Claude Code. La page d'accueil affiche le mode utilisé.
+Si cette variable existe, FreshDrive passe par l'API ; sinon, par Claude Code. La page d'accueil affiche le mode utilisé.
 
 ### 3. Connecter Auchan
 
 Il faut que auchan.fr te voie connecté **avec un drive choisi**.
 
-- **macOS avec Google Chrome :** connecte-toi sur auchan.fr dans Chrome et choisis ton drive. C'est tout : MyFresh lit la session de Chrome à chaque fois (macOS peut te demander l'accès au trousseau « Chrome Safe Storage » : accepte). Pour vérifier : `npm run auchan:import-chrome`.
+- **macOS avec Google Chrome :** connecte-toi sur auchan.fr dans Chrome et choisis ton drive. C'est tout : FreshDrive lit la session de Chrome à chaque fois (macOS peut te demander l'accès au trousseau « Chrome Safe Storage » : accepte). Pour vérifier : `npm run auchan:import-chrome`.
 - **Windows, Linux, ou un autre navigateur :** lance `npm run auchan:login`. Une fenêtre Chromium s'ouvre : connecte-toi à ton compte Auchan et choisis ton drive. La fenêtre se ferme toute seule quand c'est bon. À refaire si la session expire.
 
 ### 4. Lancer l'app
@@ -62,9 +62,9 @@ Puis ouvre **http://127.0.0.1:3141** (ou http://localhost:3141). L'app n'accepte
 ## Utilisation
 
 1. **Mon profil** : ajoute les personnes du foyer (allergies, ce qu'elles n'aiment pas), ton matériel de cuisine et vos habitudes. Claude en tient compte à chaque nouvelle semaine ; les allergies sont des interdits absolus.
-2. **Nouvelle semaine** : nombre de dîners, budget, contraintes. MyFresh charge les promos Auchan, Claude propose des recettes (deux de plus que de dîners, pour choisir), puis MyFresh cherche les produits. Compte quelques minutes.
+2. **Nouvelle semaine** : nombre de dîners, budget, contraintes. FreshDrive charge les promos Auchan, Claude propose des recettes (deux de plus que de dîners, pour choisir), puis FreshDrive cherche les produits. Compte quelques minutes.
 3. **Choisis tes recettes** : retiens-en autant que de dîners. Tu peux changer un produit, cocher ce que tu as déjà au placard, demander à Claude de modifier une recette ou d'en proposer d'autres. La barre du haut suit le budget en direct.
-4. **Vérifier le panier** : MyFresh te montre exactement ce qu'il va ajouter à ton panier Auchan. Rien ne part sans ta confirmation.
+4. **Vérifier le panier** : FreshDrive te montre exactement ce qu'il va ajouter à ton panier Auchan. Rien ne part sans ta confirmation.
 5. **Finalise sur auchan.fr** : créneau et paiement, comme d'habitude.
 6. **Imprimer / PDF** : fiches recettes (avec les étapes à faire avec les enfants) et liste de courses.
 
@@ -110,7 +110,7 @@ Les illustrations des recettes sont des dessins SVG que Claude Code réalise à 
 | « Auchan ne voit aucun drive » | Sur auchan.fr, connecte-toi **et** choisis un drive, puis clique sur « Vérifier » sur l'accueil. Hors macOS : relance `npm run auchan:login`. |
 | « Commande « claude » introuvable » | Installe Claude Code et connecte-toi (`claude`), ou définis `ANTHROPIC_API_KEY` dans `.env.local`. |
 | Le PDF ne se télécharge pas | `npx playwright install chromium`, et garde l'app lancée sur le port 3141. |
-| « Accès refusé : MyFresh ne répond qu'à … » | Ouvre l'app sur http://127.0.0.1:3141, pas via une autre adresse. |
+| « Accès refusé : FreshDrive ne répond qu'à … » | Ouvre l'app sur http://127.0.0.1:3141, pas via une autre adresse. |
 | Une tâche est déjà en cours | Une seule préparation ou un seul envoi à la fois : attends la fin (la page se met à jour toute seule). |
 
 ## Organisation du code
@@ -122,9 +122,9 @@ Les illustrations des recettes sont des dessins SVG que Claude Code réalise à 
 
 ## Licence
 
-MyFresh est publié sous la [PolyForm Strict License 1.0.0](LICENSE). En résumé (seul le texte anglais du fichier `LICENSE` fait foi) :
+FreshDrive est publié sous la [PolyForm Strict License 1.0.0](LICENSE). En résumé (seul le texte anglais du fichier `LICENSE` fait foi) :
 
-- **Autorisé :** installer et utiliser MyFresh pour toi, sans but commercial.
+- **Autorisé :** installer et utiliser FreshDrive pour toi, sans but commercial.
 - **Interdit :** modifier le code, le redistribuer (le copier ailleurs, le republier, le donner à quelqu'un), en tirer un autre projet, ou en faire un usage commercial.
 
 Pour tout autre usage, demande d'abord l'autorisation à l'auteur.

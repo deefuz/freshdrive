@@ -3,21 +3,21 @@ import { loadWeeklyContext } from "../context/cache";
 import { selectBackend } from "../llm/backend";
 import { FavoriteStore } from "../store/favorites";
 import { WeekStore } from "../store/weeks";
-import { MyFreshApp } from "./service";
+import { FreshDriveApp } from "./service";
 
-const globalForApp = globalThis as typeof globalThis & { __myfreshApp?: MyFreshApp };
+const globalForApp = globalThis as typeof globalThis & { __freshdriveApp?: FreshDriveApp };
 
 /**
  * Instance unique pour le processus serveur Next.js (les tâches en cours vivent en mémoire).
  * Rangée dans globalThis pour survivre aux rechargements de modules de `next dev`.
  */
-export function getApp(): MyFreshApp {
-  globalForApp.__myfreshApp ??= new MyFreshApp({
+export function getApp(): FreshDriveApp {
+  globalForApp.__freshdriveApp ??= new FreshDriveApp({
     store: new WeekStore(),
     favorites: new FavoriteStore(),
     backend: () => selectBackend(),
     openAuchan: () => openAuchan(),
     loadContext: (connector) => loadWeeklyContext(connector),
   });
-  return globalForApp.__myfreshApp;
+  return globalForApp.__freshdriveApp;
 }

@@ -59,7 +59,7 @@ export function PushReportView({ report }: { report: PushReport }) {
           Finaliser ma commande sur auchan.fr
         </a>
         <p className="text-sm text-pebble">
-          MyFresh ne passe jamais commande : choisis ton créneau et paie sur le site Auchan.
+          FreshDrive ne passe jamais commande : choisis ton créneau et paie sur le site Auchan.
         </p>
       </div>
     </div>

@@ -25,12 +25,12 @@ export interface OpenedStore {
   warnings: string[];
 }
 
-const globalForGate = globalThis as typeof globalThis & { __myfreshAuchanGate?: RequestGate };
+const globalForGate = globalThis as typeof globalThis & { __freshdriveAuchanGate?: RequestGate };
 
 /** Une seule porte pour tout le processus : au plus une requête toutes les 350 ms vers auchan.fr. */
 export function sharedGate(): RequestGate {
-  globalForGate.__myfreshAuchanGate ??= new RequestGate();
-  return globalForGate.__myfreshAuchanGate;
+  globalForGate.__freshdriveAuchanGate ??= new RequestGate();
+  return globalForGate.__freshdriveAuchanGate;
 }
 
 export const defaultOpenDeps: OpenAuchanDeps = {

@@ -48,7 +48,7 @@ function splitTheme(theme: string): { name: string; until: string | null } {
   return m ? { name: m[1], until: m[2] } : { name: theme, until: null };
 }
 
-/** Ce qui fait tourner MyFresh : la session Auchan, le contexte de la semaine et Claude. */
+/** Ce qui fait tourner FreshDrive : la session Auchan, le contexte de la semaine et Claude. */
 export function StatusPanel({
   session,
   context,
@@ -61,7 +61,7 @@ export function StatusPanel({
   const sessionTone: Tone = !session ? "idle" : session.ok ? "ok" : "ko";
   return (
     <section
-      aria-label="État de MyFresh"
+      aria-label="État de FreshDrive"
       className={`${card} grid divide-y divide-oat-line md:grid-cols-[1fr_1.35fr_0.9fr] md:divide-x md:divide-y-0`}
     >
       <Cell

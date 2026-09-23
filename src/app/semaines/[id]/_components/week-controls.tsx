@@ -150,7 +150,7 @@ export function ReviseRecipeForm({ weekId, recipeId }: { weekId: string; recipeI
       >
         {pending ? "Envoi…" : "Demander la modification"}
       </button>
-      <p className="text-pebble">Claude réécrit la recette, puis MyFresh recherche à nouveau ses produits.</p>
+      <p className="text-pebble">Claude réécrit la recette, puis FreshDrive recherche à nouveau ses produits.</p>
     </form>
   );
 }

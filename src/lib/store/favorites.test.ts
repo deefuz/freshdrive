@@ -8,7 +8,7 @@ import { favoriteId, FavoriteStore } from "./favorites";
 let dir: string;
 let file: string;
 beforeEach(() => {
-  dir = fs.mkdtempSync(path.join(os.tmpdir(), "myfresh-fav-"));
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), "freshdrive-fav-"));
   file = path.join(dir, "sous-dossier", "favorites.json");
 });
 afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));

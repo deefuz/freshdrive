@@ -24,9 +24,14 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
               <Link href="/" aria-label="MyFresh, accueil" className="rounded">
                 <Logo />
               </Link>
-              <Link href="/" className="hidden text-[0.9375rem] font-medium hover:underline sm:inline">
-                Mes semaines
-              </Link>
+              <div className="hidden items-center gap-6 text-[0.9375rem] font-medium sm:flex">
+                <Link href="/" className="hover:underline">
+                  Mes semaines
+                </Link>
+                <Link href="/depenses" className="hover:underline">
+                  Mes dépenses
+                </Link>
+              </div>
             </div>
             <Link href="/semaines/nouvelle" className={btn.secondary}>
               Nouvelle semaine

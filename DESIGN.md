@@ -176,6 +176,9 @@ Un fond de nappe crème, de l'encre anthracite, et quelques couleurs de légumes
 - **Myrtille** (#1b5faa): badge d'information (« ENVOYÉE »), rare.
 - **Rouge Auchan** (#d6001c) et **Terre cuite Claude** (#c96442): uniquement le fond des pastilles-logos 40px des services (panneau d'état de l'accueil), icône blanc cassé dessus. Jamais ailleurs.
 
+### Graphiques
+- Dépenses par semaine : colonnes empilées de 24px max, **basilic** = payé, **citron** = économies promos, 2px d'écart entre segments, bout arrondi 4px ; trait anthracite 2px = budget. Légende toujours visible, info-bulle au survol et au focus, tableau équivalent sous le graphique (le citron n'atteint pas 3:1 sur le fond).
+
 ### Neutral
 - **Crème** (#faf8f3): fond de page (la « nappe »). Aussi la couleur du texte sur anthracite.
 - **Blanc cassé** (#fffefa): cartes, champs, listes. Jamais `#fff`.

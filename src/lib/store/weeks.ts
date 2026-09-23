@@ -64,6 +64,8 @@ export interface Week {
   pushReport: PushReport | null;
   /** posé avant le premier envoi de ligne au panier ; empêche un 2e envoi si le serveur redémarre en cours de route */
   pushStartedAt?: string;
+  /** avertissements de la dernière préparation (ex. : vérification des produits par Claude impossible) */
+  warnings?: string[];
 }
 
 /** Vérification minimale d'un fichier de semaine : écarte l'ancien format du CLI et les fichiers abîmés. */

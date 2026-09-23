@@ -5,12 +5,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBackend } from "../../../tests/helpers/fake-backend";
 import { makeProduct, makeRecipe } from "../../../tests/helpers/factories";
 import { FakeConnector } from "../../../tests/helpers/fake-connector";
+import { SessionExpiredError } from "../auchan/http";
 import type { WeeklyContext } from "../context/build";
 import type { JobContext } from "../jobs/runner";
 import type { LlmBackend } from "../llm/backend";
+import { LlmError } from "../recipes/generate";
 import type { Brief } from "../recipes/brief";
 import { WeekStore } from "../store/weeks";
-import { chooseProduct } from "./edit";
+import { chooseProduct, setPantry } from "./edit";
 import { runCreateWeek, runPush, runReviseRecipe, type WorkflowDeps } from "./workflows";
 
 const brief: Brief = { dinners: 1, adults: 2, children: 0, budgetEur: 30, filters: [], notes: "", preferOrganic: false };
@@ -111,6 +113,39 @@ describe("runCreateWeek", () => {
     await runCreateWeek(id, deps(backend, { useArbiter: false }), jobRecorder());
     expect(backend.arbitrate).not.toHaveBeenCalled();
     expect(store.get(id)!.status).toBe("ready");
+  });
+
+  it("arbitrage en échec (LlmError) : classement déterministe gardé, avertissement enregistré", async () => {
+    const backend = fakeBackend({
+      generateMenu: vi.fn(async () => menu()),
+      arbitrate: vi.fn(async () => {
+        throw new LlmError("Claude Code n'a pas répondu en 10 min.");
+      }),
+    });
+    const id = newWeek();
+    await runCreateWeek(id, deps(backend), jobRecorder());
+    const week = store.get(id)!;
+    expect(backend.arbitrate).toHaveBeenCalledTimes(1);
+    expect(week.status).toBe("ready");
+    expect(week.matches.find((m) => m.need.key === "pates|g")?.chosen?.product.name).toBe("Pâtes");
+    expect(week.warnings).toEqual([
+      "Vérification des produits par Claude impossible (Claude Code n'a pas répondu en 10 min.) : choix automatiques de MyFresh, à vérifier.",
+    ]);
+  });
+
+  it("arbitrage réussi : aucun avertissement ; une autre erreur que LlmError fait échouer la préparation", async () => {
+    const id = newWeek();
+    await runCreateWeek(id, deps(fakeBackend({ generateMenu: vi.fn(async () => menu()) })), jobRecorder());
+    expect(store.get(id)!.warnings).toBeUndefined();
+
+    const id2 = newWeek();
+    const backend = fakeBackend({
+      generateMenu: vi.fn(async () => menu()),
+      arbitrate: vi.fn(async () => {
+        throw new TypeError("bug");
+      }),
+    });
+    await expect(runCreateWeek(id2, deps(backend), jobRecorder())).rejects.toThrow("bug");
   });
 
   it("reprend sans régénérer quand les recettes sont déjà là", async () => {
@@ -243,9 +278,84 @@ describe("runPush", () => {
     expect(store.get(id)!.pushReport).toBeNull();
   });
 
+  it("échec après le début de l'envoi : message « Envoi interrompu », pushStartedAt conservé", async () => {
+    const id = newWeek();
+    await runCreateWeek(id, deps(fakeBackend({ generateMenu: vi.fn(async () => menu()) })), jobRecorder());
+    const pushDeps = { store, openStore: async () => connector };
+    const job = {
+      ...jobRecorder(),
+      progress: () => {
+        throw new Error("disque plein");
+      },
+    };
+
+    await expect(runPush(id, pushDeps, job, () => new Date("2026-09-23T18:00:00.000Z"))).rejects.toThrow(
+      "Envoi interrompu : vérifie ton panier sur auchan.fr avant toute action. (Cause : disque plein)",
+    );
+    const week = store.get(id)!;
+    expect(week.pushStartedAt).toBe("2026-09-23T18:00:00.000Z");
+    expect(week.status).toBe("ready");
+  });
+
+  it("échec avant le début de l'envoi (connexion Auchan) : message d'origine, rien de marqué", async () => {
+    const id = newWeek();
+    await runCreateWeek(id, deps(fakeBackend({ generateMenu: vi.fn(async () => menu()) })), jobRecorder());
+    const pushDeps = {
+      store,
+      openStore: async (): Promise<FakeConnector> => {
+        throw new Error("Auchan ne voit aucun drive.");
+      },
+    };
+    await expect(runPush(id, pushDeps, jobRecorder())).rejects.toThrow("Auchan ne voit aucun drive.");
+    expect(store.get(id)!.pushStartedAt).toBeUndefined();
+  });
+
+  it("session expirée avant toute ligne écrite : marqueur effacé, erreur claire, envoi relançable", async () => {
+    const id = newWeek();
+    await runCreateWeek(id, deps(fakeBackend({ generateMenu: vi.fn(async () => menu()) })), jobRecorder());
+    const set = vi.spyOn(connector, "setCartQuantities").mockRejectedValue(new SessionExpiredError());
+    const pushDeps = { store, openStore: async () => connector };
+
+    await expect(runPush(id, pushDeps, jobRecorder())).rejects.toThrow(
+      "Session Auchan expirée avant l'envoi : reconnecte-toi sur auchan.fr dans Chrome puis relance l'envoi.",
+    );
+    expect(set).toHaveBeenCalledTimes(1);
+    const week = store.get(id)!;
+    expect(week.pushStartedAt).toBeUndefined();
+    expect(week.status).toBe("ready");
+    expect(week.pushReport).toBeNull();
+
+    set.mockRestore();
+    await runPush(id, pushDeps, jobRecorder());
+    expect(store.get(id)!.status).toBe("pushed");
+  });
+
+  it("session expirée après des lignes écrites : semaine envoyée avec un rapport partiel", async () => {
+    const id = newWeek();
+    await runCreateWeek(id, deps(fakeBackend({ generateMenu: vi.fn(async () => menu()) })), jobRecorder());
+    store.save(setPantry(store.get(id)!, "sel|g", false)); // 3 lignes : tomates, pâtes, sel
+    const original = connector.setCartQuantities.bind(connector);
+    const set = vi.spyOn(connector, "setCartQuantities").mockImplementation(async (lines) => {
+      if (set.mock.calls.length > 1) throw new SessionExpiredError();
+      return original(lines);
+    });
+    const pushDeps = { store, openStore: async () => connector };
+
+    await runPush(id, pushDeps, jobRecorder(), () => new Date("2026-09-23T18:00:00.000Z"));
+
+    expect(set).toHaveBeenCalledTimes(2);
+    const week = store.get(id)!;
+    expect(week.status).toBe("pushed");
+    expect(week.pushStartedAt).toBe("2026-09-23T18:00:00.000Z");
+    expect(week.pushReport?.added.map((l) => l.name)).toEqual(["Tomates"]);
+    expect(week.pushReport?.failed.map((l) => l.name)).toEqual(["Pâtes", "Sel"]);
+    expect(week.pushReport?.failed[0].error).toMatch(/Session Auchan expirée/);
+  });
+
   it("enregistre pushStartedAt avant le premier appel à setCartQuantities", async () => {
     const id = newWeek();
     await runCreateWeek(id, deps(fakeBackend({ generateMenu: vi.fn(async () => menu()) })), jobRecorder());
+    store.save(setPantry(store.get(id)!, "sel|g", false)); // 3 lignes : tomates, pâtes, sel
     const original = connector.setCartQuantities.bind(connector);
     let pushStartedAtDuringFirstCall: string | null | undefined;
     vi.spyOn(connector, "setCartQuantities").mockImplementation(async (lines) => {

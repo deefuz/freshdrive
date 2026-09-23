@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { makeProduct } from "../../../tests/helpers/factories";
 import { FakeConnector } from "../../../tests/helpers/fake-connector";
+import { SessionExpiredError } from "../auchan/http";
 import type { BasketLine } from "../budget/basket";
 import type { Product } from "../types";
 import { round2 } from "../units";
-import { previewPush, productLabels, pushLines } from "./push";
+import { PUSH_SESSION_EXPIRED_LINE, previewPush, productLabels, pushLines, stoppedBySessionExpiry } from "./push";
 
 const line = (key: string, name: string, product: Product, packs: number): BasketLine => ({
   key,
@@ -74,5 +75,46 @@ describe("pushLines", () => {
       cartTotal: 0,
     });
     expect(progress).toEqual([1, 2, 3]);
+  });
+});
+
+describe("pushLines : session Auchan expirée", () => {
+  it("s'arrête à la première SessionExpiredError : lignes restantes en échec, sans autre appel", async () => {
+    const connector = new FakeConnector({});
+    const lines = ["a", "b", "c"].map((id) => ({
+      productId: id,
+      offerId: `o-${id}`,
+      sellerId: "s",
+      sellerType: "GROCERY",
+      quantity: 1,
+    }));
+    const set = vi.spyOn(connector, "setCartQuantities").mockImplementation(async ([l]) => {
+      if (l.productId === "b") throw new SessionExpiredError();
+      return { cart: connector.cart, revised: [] };
+    });
+    const getCart = vi.spyOn(connector, "getCart");
+    const progress: number[] = [];
+    const report = await pushLines(connector, lines, new Map(), { onProgress: (done) => progress.push(done) });
+    expect(set).toHaveBeenCalledTimes(2);
+    expect(getCart).not.toHaveBeenCalled();
+    expect(report.added.map((l) => l.productId)).toEqual(["a"]);
+    expect(report.failed).toEqual([
+      { productId: "b", name: "b", url: "", requested: 1, actual: null, error: PUSH_SESSION_EXPIRED_LINE },
+      { productId: "c", name: "c", url: "", requested: 1, actual: null, error: PUSH_SESSION_EXPIRED_LINE },
+    ]);
+    expect(report.cartTotal).toBeNull();
+    expect(progress).toEqual([1, 3]);
+    expect(stoppedBySessionExpiry(report)).toBe(true);
+  });
+
+  it("stoppedBySessionExpiry : faux pour des échecs ordinaires", async () => {
+    const connector = new FakeConnector({});
+    vi.spyOn(connector, "setCartQuantities").mockRejectedValue(new Error("Auchan a répondu 500 pour /cart/update"));
+    const report = await pushLines(
+      connector,
+      [{ productId: "a", offerId: "o", sellerId: "s", sellerType: "GROCERY", quantity: 1 }],
+      new Map(),
+    );
+    expect(stoppedBySessionExpiry(report)).toBe(false);
   });
 });

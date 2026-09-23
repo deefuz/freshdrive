@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { makeProduct } from "../../tests/helpers/factories";
-import { formatEur, formatQty, formatWeekDate, productLabel } from "./format";
+import { makeProduct, makeWeek } from "../../tests/helpers/factories";
+import { formatEur, formatQty, formatWeekDate, productLabel, weekStatusLabel } from "./format";
 
 describe("formatEur", () => {
   it("virgule décimale, arrondi au centime", () => {
@@ -37,5 +37,32 @@ describe("productLabel", () => {
 describe("formatWeekDate", () => {
   it("date en toutes lettres à partir de l'identifiant", () => {
     expect(formatWeekDate("2026-09-23-2")).toBe("23 septembre 2026");
+  });
+});
+
+describe("weekStatusLabel", () => {
+  it("libellé du statut, ou « Envoi interrompu » si l'envoi a commencé sans aboutir", () => {
+    expect(weekStatusLabel(makeWeek({ status: "ready" }))).toBe("Prête");
+    expect(weekStatusLabel(makeWeek({ status: "pushed", pushStartedAt: "2026-09-23T09:00:00.000Z" }))).toBe(
+      "Envoyée au panier",
+    );
+    expect(weekStatusLabel(makeWeek({ status: "ready", pushStartedAt: "2026-09-23T09:00:00.000Z" }))).toBe(
+      "Envoi interrompu",
+    );
+  });
+
+  it("pendant l'envoi : pas encore « interrompu »", () => {
+    const week = makeWeek({ status: "ready", pushStartedAt: "2026-09-23T09:00:00.000Z" });
+    week.job = {
+      weekId: week.id,
+      kind: "push",
+      status: "running",
+      step: "Ajout au panier Auchan",
+      progress: null,
+      error: null,
+      startedAt: "2026-09-23T09:00:00.000Z",
+      finishedAt: null,
+    };
+    expect(weekStatusLabel(week)).toBe("Envoi en cours");
   });
 });

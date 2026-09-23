@@ -55,6 +55,7 @@ function printWeek(week: Week): WeekTotals {
     })),
   );
   if (totals.basket.missing.length) console.log(`Introuvables : ${totals.basket.missing.join(", ")}`);
+  for (const w of week.warnings ?? []) console.log(`⚠ ${w}`);
   const promo = totals.promoSaved ? ` (dont ${formatEur(totals.promoSaved)} d'économies promo)` : "";
   const status = totals.overBudget ? "⚠ au-dessus du budget" : "✅";
   console.log(`Total estimé : ${formatEur(totals.net)} / budget ${formatEur(totals.budget)}${promo} ${status}`);

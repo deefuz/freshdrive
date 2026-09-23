@@ -85,6 +85,19 @@ export class JobRunner {
   }
 }
 
+/** Envoi au panier arrêté en cours de route : des lignes ont peut-être déjà été écrites, ne pas relancer à l'aveugle. */
+export const PUSH_INTERRUPTED_MESSAGE = "Envoi interrompu : vérifie ton panier sur auchan.fr avant toute action.";
+
+/** Message d'une tâche coupée par un redémarrage du serveur. */
+export function interruptedJobMessage(kind: JobKind): string {
+  return kind === "push" ? PUSH_INTERRUPTED_MESSAGE : "Tâche interrompue (le serveur a redémarré). Relance-la.";
+}
+
+/** Message d'un envoi au panier qui échoue après l'écriture possible de premières lignes. */
+export function pushFailureMessage(cause: string): string {
+  return cause ? `${PUSH_INTERRUPTED_MESSAGE} (Cause : ${cause})` : PUSH_INTERRUPTED_MESSAGE;
+}
+
 /** Une tâche « running » dans le fichier, inconnue de l'exécuteur (serveur redémarré), passe en erreur. */
 export function reconcileStaleJob(week: Week, current: JobState | null, now: Date = new Date()): Week {
   const job = week.job;
@@ -98,7 +111,7 @@ export function reconcileStaleJob(week: Week, current: JobState | null, now: Dat
     job: {
       ...job,
       status: "error",
-      error: "Tâche interrompue (le serveur a redémarré). Relance-la.",
+      error: interruptedJobMessage(job.kind),
       finishedAt: now.toISOString(),
     },
   };

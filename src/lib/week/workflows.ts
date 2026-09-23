@@ -1,14 +1,16 @@
 import { chooseSelection } from "../budget/basket";
-import { previewPush, productLabels, pushLines } from "../cart/push";
+import { previewPush, productLabels, pushLines, stoppedBySessionExpiry } from "../cart/push";
 import { summarizeContext, type WeeklyContext } from "../context/build";
-import type { JobContext } from "../jobs/runner";
+import { type JobContext, pushFailureMessage } from "../jobs/runner";
 import type { LlmBackend } from "../llm/backend";
 import { type IngredientMatch, matchNeeds } from "../matching/match";
 import { aggregateNeeds, type IngredientNeed } from "../matching/needs";
 import { fetchOffInfo } from "../matching/off";
+import type { Arbiter } from "../matching/arbiter";
 import type { ScoreOptions } from "../matching/score";
 import type { Brief } from "../recipes/brief";
-import { WeekNotFoundError, type Week, type WeekStore } from "../store/weeks";
+import { LlmError } from "../recipes/generate";
+import { type PushReport, WeekNotFoundError, type Week, type WeekStore } from "../store/weeks";
 import type { Product, StoreConnector } from "../types";
 import { initialOverrides, reconcileOverrides, weekTotals } from "./edit";
 
@@ -40,16 +42,32 @@ function requireWeek(deps: Pick<WorkflowDeps, "store">, weekId: string): Week {
   return week;
 }
 
+/** Arbitrage qui, si Claude échoue, garde le classement déterministe et note un avertissement. */
+function tolerantArbiter(arbitrate: Arbiter, warnings: string[]): Arbiter {
+  return async (items) => {
+    try {
+      return await arbitrate(items);
+    } catch (e) {
+      if (!(e instanceof LlmError)) throw e;
+      warnings.push(
+        `Vérification des produits par Claude impossible (${e.message}) : choix automatiques de MyFresh, à vérifier.`,
+      );
+      return new Map();
+    }
+  };
+}
+
 async function matchFor(
   needs: IngredientNeed[],
   brief: Brief,
   connector: StoreConnector,
   deps: WorkflowDeps,
   job: JobContext,
-): Promise<IngredientMatch[]> {
-  const arbiter = deps.useArbiter === false ? undefined : deps.backend.arbitrate;
+): Promise<{ matches: IngredientMatch[]; warnings: string[] }> {
+  const warnings: string[] = [];
+  const arbiter = deps.useArbiter === false ? undefined : tolerantArbiter(deps.backend.arbitrate, warnings);
   job.step("Choix des produits Auchan");
-  return matchNeeds(needs, scoreOptions(brief), {
+  const matches = await matchNeeds(needs, scoreOptions(brief), {
     connector,
     arbiter,
     novaLookup: (deps.novaLookup ?? defaultNovaLookup)(connector),
@@ -58,6 +76,12 @@ async function matchFor(
       if (done === total && arbiter) job.step("Vérification des produits par Claude");
     },
   });
+  return { matches, warnings };
+}
+
+function setWarnings(week: Week, warnings: string[]): void {
+  if (warnings.length) week.warnings = warnings;
+  else delete week.warnings;
 }
 
 /** Correspondances pour les nouveaux besoins : fraîches pour les ingrédients recherchés, anciennes sinon. */
@@ -96,7 +120,7 @@ export async function runCreateWeek(
       });
     }
 
-    const matches = await matchFor(aggregateNeeds(recipes), week.brief, connector, deps, job);
+    const { matches, warnings } = await matchFor(aggregateNeeds(recipes), week.brief, connector, deps, job);
     const overrides = initialOverrides(matches, opts.includePantryStaples);
     const selected = chooseSelection(
       recipes.map((r) => r.id),
@@ -108,6 +132,7 @@ export async function runCreateWeek(
       w.matches = matches;
       w.overrides = overrides;
       w.selectedRecipeIds = selected;
+      setWarnings(w, warnings);
       w.status = "ready";
     });
   } catch (e) {
@@ -140,7 +165,7 @@ export async function runReviseRecipe(
   const recipes = week.recipes.map((r) => (r.id === recipeId ? revised : r));
   const needs = aggregateNeeds(recipes);
   const rematchKeys = new Set(aggregateNeeds([revised]).map((n) => n.key));
-  const fresh = await matchFor(
+  const { matches: fresh, warnings } = await matchFor(
     needs.filter((n) => rematchKeys.has(n.key)),
     week.brief,
     connector,
@@ -153,8 +178,12 @@ export async function runReviseRecipe(
     w.overrides = reconcileOverrides(w.overrides, w.matches, matches, rematchKeys);
     w.recipes = recipes;
     w.matches = matches;
+    setWarnings(w, warnings);
   });
 }
+
+export const PUSH_SESSION_EXPIRED_MESSAGE =
+  "Session Auchan expirée avant l'envoi : reconnecte-toi sur auchan.fr dans Chrome puis relance l'envoi.";
 
 export async function runPush(
   weekId: string,
@@ -183,13 +212,33 @@ export async function runPush(
     w.pushStartedAt = now().toISOString();
   });
 
-  job.step("Ajout au panier Auchan");
-  const report = await pushLines(connector, cartLines, productLabels(basket.lines), {
-    onProgress: (done, total) => job.progress(done, total),
-    now: now(),
-  });
-  deps.store.update(weekId, (w) => {
-    w.pushReport = report;
-    w.status = "pushed";
-  });
+  const interrupted = (e: unknown) => new Error(pushFailureMessage(e instanceof Error ? e.message : String(e)));
+  let report: PushReport;
+  try {
+    job.step("Ajout au panier Auchan");
+    report = await pushLines(connector, cartLines, productLabels(basket.lines), {
+      onProgress: (done, total) => job.progress(done, total),
+      now: now(),
+    });
+  } catch (e) {
+    // des lignes ont peut-être déjà été écrites : l'utilisateur doit vérifier son panier avant toute action
+    throw interrupted(e);
+  }
+
+  if (stoppedBySessionExpiry(report) && !report.added.length && !report.adjusted.length) {
+    // rien n'a été écrit dans le panier : l'envoi peut être relancé sans risque de doublon
+    deps.store.update(weekId, (w) => {
+      delete w.pushStartedAt;
+    });
+    throw new Error(PUSH_SESSION_EXPIRED_MESSAGE);
+  }
+
+  try {
+    deps.store.update(weekId, (w) => {
+      w.pushReport = report;
+      w.status = "pushed";
+    });
+  } catch (e) {
+    throw interrupted(e);
+  }
 }

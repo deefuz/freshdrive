@@ -1,5 +1,5 @@
 import type { Recipe } from "./recipes/schema";
-import type { JobKind, WeekStatus } from "./store/weeks";
+import type { JobKind, Week, WeekStatus } from "./store/weeks";
 import type { Product, QtyUnit } from "./types";
 import { round2 } from "./units";
 
@@ -53,6 +53,14 @@ export const WEEK_STATUS_LABELS: Record<WeekStatus, string> = {
   ready: "Prête",
   pushed: "Envoyée au panier",
 };
+
+/** Statut affiché dans l'historique : un envoi commencé mais pas terminé est signalé. */
+export function weekStatusLabel(week: Pick<Week, "status" | "pushStartedAt" | "job">): string {
+  if (week.pushStartedAt && week.status !== "pushed") {
+    return week.job?.kind === "push" && week.job.status === "running" ? "Envoi en cours" : "Envoi interrompu";
+  }
+  return WEEK_STATUS_LABELS[week.status];
+}
 
 export const JOB_LABELS: Record<JobKind, string> = {
   create: "Préparation de la semaine",

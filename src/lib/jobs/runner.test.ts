@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { makeWeek } from "../../../tests/helpers/factories";
 import type { JobState } from "../store/weeks";
-import { JobBusyError, JobRunner, reconcileStaleJob } from "./runner";
+import { interruptedJobMessage, JobBusyError, JobRunner, PUSH_INTERRUPTED_MESSAGE, pushFailureMessage, reconcileStaleJob } from "./runner";
 
 const fixedNow = () => new Date("2026-09-23T10:00:00.000Z");
 
@@ -92,10 +92,35 @@ describe("reconcileStaleJob", () => {
     expect(week.job?.status).toBe("error");
   });
 
+  it("un envoi au panier interrompu : message propre à l'envoi, semaine prête", () => {
+    const week = reconcileStaleJob(
+      makeWeek({ status: "ready", pushStartedAt: running.startedAt, job: { ...running, kind: "push" } }),
+      null,
+    );
+    expect(week.status).toBe("ready");
+    expect(week.job?.error).toBe("Envoi interrompu : vérifie ton panier sur auchan.fr avant toute action.");
+  });
+
   it("tâche réellement en cours, ou déjà terminée : semaine inchangée", () => {
     const week = makeWeek({ status: "generating", job: running });
     expect(reconcileStaleJob(week, running)).toBe(week);
     const done = makeWeek({ job: { ...running, status: "done" } });
     expect(reconcileStaleJob(done, null)).toBe(done);
+  });
+});
+
+describe("messages d'échec", () => {
+  it("interruptedJobMessage : générique, sauf pour l'envoi au panier", () => {
+    expect(interruptedJobMessage("create")).toBe("Tâche interrompue (le serveur a redémarré). Relance-la.");
+    expect(interruptedJobMessage("revise-recipe")).toBe("Tâche interrompue (le serveur a redémarré). Relance-la.");
+    expect(interruptedJobMessage("push")).toBe(PUSH_INTERRUPTED_MESSAGE);
+    expect(interruptedJobMessage("push")).not.toMatch(/Relance/);
+  });
+
+  it("pushFailureMessage : consigne de vérifier le panier, avec la cause", () => {
+    expect(pushFailureMessage("disque plein")).toBe(
+      "Envoi interrompu : vérifie ton panier sur auchan.fr avant toute action. (Cause : disque plein)",
+    );
+    expect(pushFailureMessage("")).toBe(PUSH_INTERRUPTED_MESSAGE);
   });
 });

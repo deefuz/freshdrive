@@ -5,7 +5,7 @@ import { checkSessionAction } from "@/app/actions";
 import { getApp } from "@/lib/app/instance";
 import { summarizeContext } from "@/lib/context/build";
 import { readCachedContext } from "@/lib/context/cache";
-import { formatDateTime, formatEur, formatWeekDate, JOB_LABELS, WEEK_STATUS_LABELS } from "@/lib/format";
+import { formatDateTime, formatEur, formatWeekDate, JOB_LABELS, weekStatusLabel } from "@/lib/format";
 import { weekTotals } from "@/lib/week/edit";
 
 const card = "rounded-xl border border-zinc-200 bg-white p-4";
@@ -89,7 +89,7 @@ export default async function HomePage() {
                       </p>
                     </div>
                     <p className="text-sm text-zinc-600">
-                      {WEEK_STATUS_LABELS[w.status]}
+                      {weekStatusLabel(w)}
                       {total !== null && ` · ${formatEur(total)}`}
                     </p>
                   </Link>

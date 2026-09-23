@@ -1,0 +1,48 @@
+import type Anthropic from "@anthropic-ai/sdk";
+import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
+import type { WeeklyContext } from "../context/build";
+import type { Brief } from "./brief";
+import { buildMenuPrompt, buildRevisePrompt, SYSTEM_PROMPT } from "./prompt";
+import { MenuSchema, type Recipe } from "./schema";
+
+export const RECIPE_MODEL = "claude-opus-5-5";
+
+export class LlmError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "LlmError";
+  }
+}
+
+export function unwrapParsed<T>(r: { stop_reason: string | null; parsed_output: T | null }): T {
+  if (r.stop_reason === "refusal") throw new LlmError("Claude a refusé la demande.");
+  if (r.stop_reason === "max_tokens") throw new LlmError("Réponse de Claude tronquée (max_tokens atteint).");
+  if (!r.parsed_output) throw new LlmError("Réponse de Claude illisible.");
+  return r.parsed_output;
+}
+
+async function askMenu(client: Anthropic, prompt: string): Promise<Recipe[]> {
+  const response = await client.messages.parse({
+    model: RECIPE_MODEL,
+    max_tokens: 16000,
+    thinking: { type: "adaptive" },
+    output_config: { effort: "high", format: zodOutputFormat(MenuSchema) },
+    system: SYSTEM_PROMPT,
+    messages: [{ role: "user", content: prompt }],
+  });
+  return unwrapParsed(response).recipes;
+}
+
+export function generateMenu(client: Anthropic, brief: Brief, ctx: WeeklyContext): Promise<Recipe[]> {
+  return askMenu(client, buildMenuPrompt(brief, ctx));
+}
+
+export function reviseMenu(
+  client: Anthropic,
+  brief: Brief,
+  ctx: WeeklyContext,
+  recipes: Recipe[],
+  instruction: string,
+): Promise<Recipe[]> {
+  return askMenu(client, buildRevisePrompt(brief, ctx, recipes, instruction));
+}

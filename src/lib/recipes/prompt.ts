@@ -55,11 +55,16 @@ export interface MenuPromptOptions {
   avoidTitles?: string[];
   /** titres des recettes favorites déjà ajoutées au menu de la semaine */
   plannedTitles?: string[];
+  /** titres des recettes déjà proposées pour cette semaine (demande de propositions supplémentaires) */
+  existingTitles?: string[];
+  /** nombre de nouvelles recettes demandées ; par défaut, le menu complet (dîners + 2) */
+  count?: number;
 }
 
 function menuOptionsBlock(options: MenuPromptOptions): string {
   const avoid = options.avoidTitles ?? [];
   const planned = options.plannedTitles ?? [];
+  const existing = options.existingTitles ?? [];
   return [
     avoid.length
       ? `Recettes servies ces dernières semaines, à éviter (ni la même recette, ni une variante très proche) : ${avoid.join(" ; ")}.`
@@ -67,19 +72,24 @@ function menuOptionsBlock(options: MenuPromptOptions): string {
     planned.length
       ? `Déjà au menu cette semaine (recettes favorites reprises : ne les propose pas, mais tu peux partager des ingrédients avec elles) : ${planned.join(" ; ")}.`
       : "",
+    existing.length
+      ? `Déjà proposées cette semaine (ne les propose pas à nouveau, ni une variante très proche ; tu peux partager des ingrédients avec elles) : ${existing.join(" ; ")}.`
+      : "",
   ]
     .filter(Boolean)
     .join("\n");
 }
 
 export function buildMenuPrompt(brief: Brief, ctx: WeeklyContext, options: MenuPromptOptions = {}): string {
-  const count = brief.dinners + 2;
   const extra = menuOptionsBlock(options);
+  const request = options.count
+    ? `Propose ${options.count} nouvelles recettes de dîner, différentes de celles déjà proposées, chacune pour ${servingsFor(brief)} portions.`
+    : `Propose ${brief.dinners + 2} recettes de dîner variées (${brief.dinners} seront retenues, les autres servent d'alternatives), chacune pour ${servingsFor(brief)} portions.`;
   return `${contextBlock(ctx)}
 
 ${briefBlock(brief)}
 ${extra ? `\n${extra}\n` : ""}
-Propose ${count} recettes de dîner variées (${brief.dinners} seront retenues, les autres servent d'alternatives), chacune pour ${servingsFor(brief)} portions.`;
+${request}`;
 }
 
 export function buildRevisePrompt(brief: Brief, ctx: WeeklyContext, recipes: Recipe[], instruction: string): string {

@@ -197,6 +197,57 @@ export async function runReviseRecipe(
   });
 }
 
+/** Identifiant libre : `id`, sinon `id-2`, `id-3`… */
+function uniqueId(id: string, taken: Set<string>): string {
+  let candidate = id;
+  for (let n = 2; taken.has(candidate); n++) candidate = `${id}-${n}`;
+  return candidate;
+}
+
+/** Ajoute `count` nouvelles propositions de recettes ; sélection, choix de produits et placard sont conservés. */
+export async function runAddRecipes(weekId: string, count: number, deps: WorkflowDeps, job: JobContext): Promise<void> {
+  const week = requireWeek(deps, weekId);
+
+  job.step("Connexion à Auchan");
+  const connector = await deps.openStore();
+  job.step("Contexte de la semaine");
+  const ctx = await deps.loadContext(connector);
+  job.step(`Nouvelles propositions de recettes (${deps.backend.label})`);
+  const generated = await deps.backend.generateMenu(week.brief, ctx, {
+    count,
+    existingTitles: week.recipes.map((r) => r.title),
+    avoidTitles: recentSelectedTitles(deps.store.list(), weekId),
+  });
+  if (!generated.length) throw new Error("Claude n'a proposé aucune nouvelle recette : réessaie.");
+
+  const taken = new Set(week.recipes.map((r) => r.id));
+  const added = generated.map((r) => {
+    const id = uniqueId(r.id, taken);
+    taken.add(id);
+    return id === r.id ? r : { ...r, id };
+  });
+  const recipes = [...week.recipes, ...added];
+  const needs = aggregateNeeds(recipes);
+  // seuls les ingrédients absents de la semaine sont recherchés ; les autres gardent leur produit
+  const known = new Set(week.matches.map((m) => m.need.key));
+  const newKeys = new Set(needs.filter((n) => !known.has(n.key)).map((n) => n.key));
+  const { matches: fresh, warnings } = await matchFor(
+    needs.filter((n) => newKeys.has(n.key)),
+    week.brief,
+    connector,
+    deps,
+    job,
+  );
+  const matches = mergeMatches(week.matches, needs, fresh);
+
+  deps.store.update(weekId, (w) => {
+    w.overrides = reconcileOverrides(w.overrides, w.matches, matches, newKeys);
+    w.recipes = recipes;
+    w.matches = matches;
+    setWarnings(w, warnings);
+  });
+}
+
 export const PUSH_SESSION_EXPIRED_MESSAGE =
   "Session Auchan expirée avant l'envoi : reconnecte-toi sur auchan.fr dans Chrome puis relance l'envoi.";
 

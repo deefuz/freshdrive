@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { ActionButton } from "@/app/_components/action-button";
 import { JobProgress } from "@/app/_components/job-progress";
-import { retryCreateAction } from "@/app/actions";
+import { addRecipesAction, retryCreateAction } from "@/app/actions";
 import { getApp } from "@/lib/app/instance";
+import { ADD_RECIPES_COUNT, MAX_WEEK_RECIPES } from "@/lib/app/service";
 import { formatWeekDate, JOB_LABELS } from "@/lib/format";
 import { isPrintable } from "@/lib/print/sheet";
 import { productRows, weekTotals } from "@/lib/week/edit";
@@ -112,6 +113,18 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
             />
           ))}
         </div>
+        {week.status !== "pushed" && week.recipes.length < MAX_WEEK_RECIPES && (
+          <div className="mt-3">
+            <ActionButton
+              action={addRecipesAction.bind(null, week.id)}
+              label={`Proposer ${ADD_RECIPES_COUNT} autres recettes`}
+              pendingLabel="Demande envoyée…"
+            />
+            <p className="mt-1 text-xs text-zinc-500">
+              Claude ajoute de nouvelles idées sans toucher à tes recettes retenues, à tes produits ni au placard.
+            </p>
+          </div>
+        )}
       </section>
       <ProductList weekId={week.id} rows={productRows(week)} />
     </div>

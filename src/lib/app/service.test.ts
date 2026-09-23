@@ -11,7 +11,7 @@ import type { LlmBackend } from "../llm/backend";
 import type { Brief } from "../recipes/brief";
 import { favoriteId as favoriteIdOf, FavoriteStore } from "../store/favorites";
 import { WeekStore } from "../store/weeks";
-import { ActionError, type AppDeps, MyFreshApp } from "./service";
+import { ActionError, ADD_RECIPES_COUNT, type AppDeps, MAX_WEEK_RECIPES, MyFreshApp } from "./service";
 
 const brief: Brief = { dinners: 1, adults: 2, children: 0, budgetEur: 30, filters: [], notes: "", preferOrganic: false };
 const ctx: WeeklyContext = {
@@ -185,6 +185,35 @@ describe("MyFreshApp", () => {
     await app.runner.idle();
     expect(() => app.startReviseRecipe(id, "pates", "   ")).toThrow(/Écris ce que tu veux changer/);
     expect(() => app.startReviseRecipe(id, "zzz", "sans four")).toThrow(/Recette introuvable/);
+  });
+
+  it("startAddRecipes lance une tâche de propositions supplémentaires, refusée sur une semaine envoyée", async () => {
+    const generateMenu = vi.fn<LlmBackend["generateMenu"]>(async () => recipes);
+    const { app } = setup(fakeBackend({ generateMenu }));
+    const { id } = app.startCreateWeek(brief);
+    await app.runner.idle();
+    generateMenu.mockResolvedValueOnce([{ ...recipes[0], id: "nouvelle", title: "Nouvelle recette" }]);
+    app.startAddRecipes(id);
+    expect(app.runner.current()?.kind).toBe("add-recipes");
+    await app.runner.idle();
+    expect(app.getWeek(id)!.recipes.map((r) => r.id)).toContain("nouvelle");
+    expect(generateMenu).toHaveBeenLastCalledWith(brief, expect.anything(), expect.objectContaining({ count: ADD_RECIPES_COUNT }));
+
+    app.startPush(id);
+    await app.runner.idle();
+    expect(() => app.startAddRecipes(id)).toThrow(
+      "Cette semaine a déjà été envoyée au panier : on ne peut plus y ajouter de recettes.",
+    );
+  });
+
+  it("startAddRecipes refuse une semaine qui a déjà trop de recettes", async () => {
+    const { app, store } = setup();
+    const { id } = app.startCreateWeek(brief);
+    await app.runner.idle();
+    store.update(id, (w) => {
+      w.recipes = Array.from({ length: MAX_WEEK_RECIPES }, (_, i) => ({ ...recipes[0], id: `r${i}` }));
+    });
+    expect(() => app.startAddRecipes(id)).toThrow(/au plus \d+ recettes/);
   });
 
   it("edit est refusé pendant une tâche sur la même semaine", async () => {

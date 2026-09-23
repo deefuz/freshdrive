@@ -8,7 +8,7 @@ import type { Recipe } from "../recipes/schema";
 import { favoriteId, type FavoriteStore } from "../store/favorites";
 import type { Week, WeekStore } from "../store/weeks";
 import type { StoreConnector } from "../types";
-import { runCreateWeek, runPush, runReviseRecipe, type WorkflowDeps } from "../week/workflows";
+import { runAddRecipes, runCreateWeek, runPush, runReviseRecipe, type WorkflowDeps } from "../week/workflows";
 
 export interface SessionStatus {
   ok: boolean;
@@ -34,6 +34,10 @@ export class ActionError extends Error {
 }
 
 const MAX_INSTRUCTION = 500;
+/** nombre de recettes ajoutées par « Proposer d'autres recettes » */
+export const ADD_RECIPES_COUNT = 3;
+/** plafond de recettes proposées dans une semaine (N+2 au départ, puis ajouts) */
+export const MAX_WEEK_RECIPES = 20;
 
 export class MyFreshApp {
   readonly store: WeekStore;
@@ -192,6 +196,20 @@ export class MyFreshApp {
     if (!week.recipes.some((r) => r.id === recipeId)) throw new ActionError("Recette introuvable.");
     this.assertIdle();
     this.runner.start(id, "revise-recipe", (job) => runReviseRecipe(id, recipeId, text, this.workflowDeps(), job));
+  }
+
+  startAddRecipes(id: string): void {
+    const week = this.requireWeek(id);
+    if (week.status === "pushed") {
+      throw new ActionError("Cette semaine a déjà été envoyée au panier : on ne peut plus y ajouter de recettes.");
+    }
+    if (week.status !== "ready") throw new ActionError("La semaine n'est pas prête.");
+    if (week.recipes.length >= MAX_WEEK_RECIPES) {
+      throw new ActionError(`Une semaine peut contenir au plus ${MAX_WEEK_RECIPES} recettes proposées.`);
+    }
+    this.assertIdle();
+    const count = Math.min(ADD_RECIPES_COUNT, MAX_WEEK_RECIPES - week.recipes.length);
+    this.runner.start(id, "add-recipes", (job) => runAddRecipes(id, count, this.workflowDeps(), job));
   }
 
   startPush(id: string): void {

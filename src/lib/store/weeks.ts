@@ -9,7 +9,7 @@ export const WEEKS_DIR = "data/weeks";
 const ID_RE = /^\d{4}-\d{2}-\d{2}-\d{1,4}$/;
 
 export type WeekStatus = "draft" | "generating" | "ready" | "pushed";
-export type JobKind = "create" | "revise-recipe" | "push";
+export type JobKind = "create" | "revise-recipe" | "add-recipes" | "push";
 export type JobStatus = "running" | "done" | "error";
 
 export interface JobState {

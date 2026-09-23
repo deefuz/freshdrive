@@ -61,6 +61,17 @@ describe("buildMenuPrompt", () => {
   });
 });
 
+describe("buildMenuPrompt : propositions supplémentaires", () => {
+  it("demande N nouvelles recettes, différentes de celles déjà proposées", () => {
+    const p = buildMenuPrompt(brief, ctx, { count: 3, existingTitles: ["Dahl doux", "Riz sauté"] });
+    expect(p).toContain(
+      "Déjà proposées cette semaine (ne les propose pas à nouveau, ni une variante très proche ; tu peux partager des ingrédients avec elles) : Dahl doux ; Riz sauté.",
+    );
+    expect(p).toContain("Propose 3 nouvelles recettes de dîner, différentes de celles déjà proposées, chacune pour 4 portions.");
+    expect(p).not.toContain("seront retenues");
+  });
+});
+
 describe("buildMenuPrompt : recettes à éviter", () => {
   it("liste les recettes des dernières semaines à ne pas reproposer", () => {
     const p = buildMenuPrompt(brief, ctx, { avoidTitles: ["Curry de lentilles", "Gratin, version douce"] });

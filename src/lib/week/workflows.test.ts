@@ -13,7 +13,7 @@ import { LlmError } from "../recipes/generate";
 import type { Brief } from "../recipes/brief";
 import { WeekStore } from "../store/weeks";
 import { chooseProduct, setPantry } from "./edit";
-import { runCreateWeek, runPush, runReviseRecipe, type WorkflowDeps } from "./workflows";
+import { runAddRecipes, runCreateWeek, runPush, runReviseRecipe, type WorkflowDeps } from "./workflows";
 
 const brief: Brief = { dinners: 1, adults: 2, children: 0, budgetEur: 30, filters: [], notes: "", preferOrganic: false };
 const ctx: WeeklyContext = {
@@ -224,6 +224,56 @@ describe("runCreateWeek", () => {
     const id = newWeek();
     await expect(runCreateWeek(id, deps(backend), jobRecorder())).rejects.toThrow(/10 min/);
     expect(store.get(id)!.status).toBe("draft");
+  });
+});
+
+describe("runAddRecipes", () => {
+  it("ajoute de nouvelles recettes sans toucher aux choix, et ne recherche que les nouveaux ingrédients", async () => {
+    const extra = [
+      makeRecipe({ id: "riz-tomate", title: "Risotto courgette", ingredients: [ing("riz", 500), ing("courgette", 300)] }),
+      makeRecipe({ id: "salade", title: "Salade de tomates", ingredients: [ing("tomates", 300)] }),
+    ];
+    const generateMenu = vi.fn<LlmBackend["generateMenu"]>(async () => menu());
+    const backend = fakeBackend({ generateMenu });
+    const id = newWeek();
+    await runCreateWeek(id, deps(backend), jobRecorder());
+    const created = store.get(id)!;
+    store.save(setPantry(chooseProduct(created, "pates|g", patesCompletes.productId), "tomates|g", true));
+    connector.searches = [];
+    generateMenu.mockResolvedValueOnce(extra);
+
+    const job = jobRecorder();
+    await runAddRecipes(id, 3, deps(backend), job);
+
+    const week = store.get(id)!;
+    expect(connector.searches).toEqual(["courgette"]);
+    expect(week.recipes.map((r) => r.id)).toEqual(["pates-tomate", "riz-tomate", "riz-tomate-2", "salade"]);
+    expect(week.selectedRecipeIds).toEqual(created.selectedRecipeIds);
+    expect(week.overrides.products).toEqual({ "pates|g": patesCompletes.productId });
+    expect(week.overrides.pantry).toContain("tomates|g");
+    expect(week.matches.find((m) => m.need.key === "tomates|g")!.need.perRecipe).toEqual({
+      "pates-tomate": 400,
+      "riz-tomate": 200,
+      salade: 300,
+    });
+    expect(week.status).toBe("ready");
+    expect(job.steps).toContain("Nouvelles propositions de recettes (Claude (faux))");
+    expect(generateMenu).toHaveBeenLastCalledWith(
+      brief,
+      ctx,
+      expect.objectContaining({ count: 3, existingTitles: created.recipes.map((r) => r.title) }),
+    );
+  });
+
+  it("aucune nouvelle recette : erreur claire, semaine inchangée", async () => {
+    const generateMenu = vi.fn<LlmBackend["generateMenu"]>(async () => menu());
+    const backend = fakeBackend({ generateMenu });
+    const id = newWeek();
+    await runCreateWeek(id, deps(backend), jobRecorder());
+    const before = store.get(id);
+    generateMenu.mockResolvedValueOnce([]);
+    await expect(runAddRecipes(id, 3, deps(backend), jobRecorder())).rejects.toThrow(/aucune nouvelle recette/);
+    expect(store.get(id)).toEqual(before);
   });
 });
 

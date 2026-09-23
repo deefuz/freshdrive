@@ -71,6 +71,7 @@ export function weekStatusLabel(week: Pick<Week, "status" | "pushStartedAt" | "j
 export const JOB_LABELS: Record<JobKind, string> = {
   create: "Préparation de la semaine",
   "revise-recipe": "Modification d'une recette",
+  "add-recipes": "Nouvelles propositions de recettes",
   push: "Envoi au panier Auchan",
 };
 

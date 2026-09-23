@@ -65,6 +65,10 @@ export async function reviseRecipeAction(
   return result.error ? { ...result, values: formValues(formData) } : result;
 }
 
+export async function addRecipesAction(weekId: string): Promise<ActionResult> {
+  return attempt(() => getApp().startAddRecipes(String(weekId)));
+}
+
 export async function confirmPushAction(weekId: string): Promise<ActionResult> {
   return attempt(() => getApp().startPush(String(weekId)));
 }

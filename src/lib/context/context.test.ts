@@ -47,6 +47,12 @@ describe("buildWeeklyContext", () => {
     expect(ctx.promos).toEqual([promo]);
     expect(summarizeContext(ctx)).toBe("1 promos · 0 anti-gaspi · thèmes : saveurs d asie · événements : Halloween");
   });
+
+  it("résumé : thèmes séparés par des points-virgules", async () => {
+    const connector = new FakeConnector({}, { promos: [], antiGaspi: [], themes: ["Asie, faites voyager vos papilles", "Foire à la bière"] });
+    const ctx = await buildWeeklyContext(connector, new Date(2026, 8, 23));
+    expect(summarizeContext(ctx)).toBe("0 promos · 0 anti-gaspi · thèmes : Asie, faites voyager vos papilles ; Foire à la bière");
+  });
 });
 
 describe("isCacheableContext", () => {

@@ -27,7 +27,9 @@ function contextBlock(ctx: WeeklyContext): string {
   return [
     `Saison : ${ctx.season}. Produits de saison : ${ctx.seasonalProduce.join(", ")}.`,
     ctx.events.length ? `Événements à venir : ${ctx.events.map((e) => `${e.name} (${e.date})`).join(", ")}.` : "",
-    ctx.themes.length ? `Thèmes mis en avant par le magasin : ${ctx.themes.join(", ")}.` : "",
+    ctx.themes.length
+      ? `Thèmes mis en avant par le magasin cette semaine (ignore ceux qui ne concernent pas les dîners) :\n${ctx.themes.map((t) => `- ${t}`).join("\n")}`
+      : "",
     `Promos alimentaires de la semaine :\n${promos.map(productLine).join("\n")}`,
     ctx.antiGaspi.length ? `Produits anti-gaspi :\n${ctx.antiGaspi.slice(0, 20).map(productLine).join("\n")}` : "",
   ]

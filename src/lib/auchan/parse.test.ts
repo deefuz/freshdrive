@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { cleanText, parseCart, parseProductCards, parseProductPage, parseThemes } from "./parse";
+import { cleanText, parseCart, parseProductCards, parseProductPage, parseThemes, themeText } from "./parse";
 
 const fx = (f: string) => fs.readFileSync(path.join(__dirname, "../../../tests/fixtures/auchan", f), "utf8");
 
@@ -71,8 +71,35 @@ describe("parseProductPage", () => {
 });
 
 describe("parseThemes", () => {
-  it("liste les boutiques thématiques hors navigation, dédupliquées", () => {
-    expect(parseThemes(fx("home.html"))).toEqual(["saveurs d asie", "foire a la biere"]);
+  it("lit les bannières thématiques réelles : thème, date de fin et catégorie, entités décodées, astérisques retirés", () => {
+    expect(parseThemes(fx("home-real.html"))).toEqual([
+      {
+        label: "Asie, faites voyager vos papilles",
+        path: "/produits-de-nos-regions-et-du-monde/asie/ca-b0801",
+        until: "05/10/2026",
+      },
+      { label: "cuisine gourmande", path: "/cuisine-gourmande/ca-888031000", until: "05/10/2026" },
+      { label: "Foire à la bière", path: "/vins-bieres-alcool/bieres-futs-cidres/ca-n071201", until: "28/09/2026" },
+    ]);
+  });
+
+  it("les liens de navigation /boutique/ ne sont pas des thèmes", () => {
+    expect(parseThemes(fx("home.html"))).toEqual([]);
+  });
+
+  it("bannière sans date : thème gardé, sans date de fin ; doublons et libellés vides écartés", () => {
+    const html = `<a class="hp-banner__link" href="/rentree/ca-1?cmp=home" aria-label="Rentrée gourmande *"></a>
+      <a class="hp-banner__link" href="/rentree/ca-2" aria-label="rentrée gourmande"></a>
+      <a class="hp-banner__link" href="/vide" aria-label="Jusqu&apos;au 01/10/2026, **"></a>
+      <a class="hp-banner__link" href="/sans-label"></a>`;
+    expect(parseThemes(html)).toEqual([{ label: "Rentrée gourmande", path: "/rentree/ca-1", until: null }]);
+  });
+});
+
+describe("themeText", () => {
+  it("ajoute la date de fin quand elle est connue", () => {
+    expect(themeText({ label: "Asie", path: "/asie", until: "05/10/2026" })).toBe("Asie (jusqu'au 05/10/2026)");
+    expect(themeText({ label: "Asie", path: "/asie", until: null })).toBe("Asie");
   });
 });
 

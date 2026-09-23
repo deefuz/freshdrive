@@ -49,6 +49,16 @@ describe("buildMenuPrompt", () => {
     expect(p).toContain("pas de poisson");
     expect(p).toContain("60 €");
   });
+
+  it("liste les thèmes du magasin, un par ligne (les libellés contiennent des virgules)", () => {
+    const p = buildMenuPrompt(brief, {
+      ...ctx,
+      themes: ["Asie, faites voyager vos papilles (jusqu'au 05/10/2026)", "Foire à la bière (jusqu'au 28/09/2026)"],
+    });
+    expect(p).toContain(
+      "Thèmes mis en avant par le magasin cette semaine (ignore ceux qui ne concernent pas les dîners) :\n- Asie, faites voyager vos papilles (jusqu'au 05/10/2026)\n- Foire à la bière (jusqu'au 28/09/2026)",
+    );
+  });
 });
 
 describe("generateMenu", () => {

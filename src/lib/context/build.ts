@@ -33,7 +33,7 @@ export function isCacheableContext(ctx: WeeklyContext): boolean {
 
 export function summarizeContext(ctx: WeeklyContext): string {
   const parts = [`${ctx.promos.length} promos`, `${ctx.antiGaspi.length} anti-gaspi`];
-  if (ctx.themes.length) parts.push(`thèmes : ${ctx.themes.join(", ")}`);
+  if (ctx.themes.length) parts.push(`thèmes : ${ctx.themes.join(" ; ")}`);
   if (ctx.events.length) parts.push(`événements : ${ctx.events.map((e) => e.name).join(", ")}`);
   return parts.join(" · ");
 }

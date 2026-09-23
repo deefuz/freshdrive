@@ -1,6 +1,14 @@
 import type { Cart, CartLine, CartUpdateResult, Product, ProductDetails, StoreConnector, StoreContext } from "../types";
 import type { HttpClient } from "./http";
-import { BASE_URL, parseCart, parseProductCards, parseProductPage, parseThemes, type RawCartResponse } from "./parse";
+import {
+  BASE_URL,
+  parseCart,
+  parseProductCards,
+  parseProductPage,
+  parseThemes,
+  type RawCartResponse,
+  themeText,
+} from "./parse";
 import type { AuchanSession } from "./session";
 
 export const FOOD_PROMO_AISLES = [
@@ -45,7 +53,7 @@ export class AuchanConnector implements StoreConnector {
       promos.push(...parseProductCards(await this.http.getText(`/boutique/promos/${aisle}`)));
     }
     const antiGaspi = parseProductCards(await this.http.getText("/boutique/anti-gaspi"));
-    const themes = parseThemes(await this.http.getText("/"));
+    const themes = parseThemes(await this.http.getText("/")).map(themeText);
     return { promos: dedupe(promos), antiGaspi: dedupe(antiGaspi), themes };
   }
 

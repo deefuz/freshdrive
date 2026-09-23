@@ -4,8 +4,6 @@ import { parseFrNumber, parsePack, parseUnitPrice, round2 } from "../units";
 
 export const BASE_URL = "https://www.auchan.fr";
 
-const NAV_SHOPS = new Set(["promos", "anti-gaspi", "baf-maison-loisirs", "nouveautes"]);
-
 export function cleanText(s: string): string {
   return s.replace(/Pipe\.(start|end)\(\d+\)/g, " ").replace(/\s+/g, " ").trim();
 }
@@ -70,16 +68,37 @@ export function parseProductPage(html: string): ProductDetails {
   return { ean, ingredients };
 }
 
-export function parseThemes(html: string): string[] {
+/** Bannière thématique de la page d'accueil Auchan (ex. « Asie, faites voyager vos papilles »). */
+export interface StoreTheme {
+  label: string;
+  /** chemin de la catégorie Auchan mise en avant, ex. « /produits-de-nos-regions-et-du-monde/asie/ca-b0801 » */
+  path: string;
+  /** date de fin affichée par Auchan (« 05/10/2026 ») ; null si absente */
+  until: string | null;
+}
+
+const UNTIL_PREFIX = /^jusqu['’]au (\d{2}\/\d{2}\/\d{4}),\s*/i;
+
+/** Thèmes de la semaine : bannières `a.hp-banner__link` dont l'aria-label vaut « Jusqu'au JJ/MM/AAAA, <thème> ». */
+export function parseThemes(html: string): StoreTheme[] {
   const $ = cheerio.load(html);
-  const themes: string[] = [];
-  $('a[href^="/boutique/"]').each((_, el) => {
-    const slug = ($(el).attr("href") ?? "").split("?")[0].split("/")[2];
-    if (!slug || NAV_SHOPS.has(slug)) return;
-    const theme = slug.replace(/-/g, " ");
-    if (!themes.includes(theme)) themes.push(theme);
+  const themes: StoreTheme[] = [];
+  $("a.hp-banner__link").each((_, el) => {
+    const aria = cleanText($(el).attr("aria-label") ?? "");
+    const until = UNTIL_PREFIX.exec(aria);
+    const label = aria
+      .slice(until ? until[0].length : 0)
+      .replace(/\s*\*+$/, "")
+      .trim();
+    if (!label || themes.some((t) => t.label.toLowerCase() === label.toLowerCase())) return;
+    themes.push({ label, path: ($(el).attr("href") ?? "").split("?")[0], until: until ? until[1] : null });
   });
   return themes;
+}
+
+/** Texte d'un thème pour le prompt et l'accueil : « Asie, faites voyager vos papilles (jusqu'au 05/10/2026) ». */
+export function themeText(theme: StoreTheme): string {
+  return theme.until ? `${theme.label} (jusqu'au ${theme.until})` : theme.label;
 }
 
 export interface RawCartResponse {

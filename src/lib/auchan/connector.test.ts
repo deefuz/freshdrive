@@ -8,7 +8,7 @@ const fx = (f: string) => fs.readFileSync(path.join(__dirname, "../../../tests/f
 
 function fakeHttp(overrides: Partial<HttpClient> = {}): HttpClient {
   return {
-    getText: vi.fn(async (p: string) => (p === "/" ? fx("home.html") : fx("search.html"))),
+    getText: vi.fn(async (p: string) => (p === "/" ? fx("home-real.html") : fx("search.html"))),
     getJson: vi.fn(async () => JSON.parse(fx("cart.json"))) as HttpClient["getJson"],
     postJson: vi.fn(async () => JSON.parse(fx("cart.json"))) as HttpClient["postJson"],
     ...overrides,
@@ -33,7 +33,11 @@ describe("AuchanConnector", () => {
     expect(http.getText).toHaveBeenCalledWith("/boutique/anti-gaspi");
     expect(ctx.promos).toHaveLength(3);
     expect(ctx.antiGaspi).toHaveLength(3);
-    expect(ctx.themes).toEqual(["saveurs d asie", "foire a la biere"]);
+    expect(ctx.themes).toEqual([
+      "Asie, faites voyager vos papilles (jusqu'au 05/10/2026)",
+      "cuisine gourmande (jusqu'au 05/10/2026)",
+      "Foire à la bière (jusqu'au 28/09/2026)",
+    ]);
   });
 
   it("envoie une mise à jour panier au format Auchan et détecte les révisions", async () => {

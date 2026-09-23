@@ -66,6 +66,8 @@ export interface Week {
   pushStartedAt?: string;
   /** avertissements de la dernière préparation (ex. : vérification des produits par Claude impossible) */
   warnings?: string[];
+  /** recettes favorites reprises à la création : ajoutées au menu généré et retenues d'office */
+  reusedRecipes?: Recipe[];
 }
 
 /** Vérification minimale d'un fichier de semaine : écarte l'ancien format du CLI et les fichiers abîmés. */

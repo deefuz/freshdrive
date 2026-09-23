@@ -2,7 +2,10 @@ import type { OpenedStore } from "../auchan/open";
 import type { WeeklyContext } from "../context/build";
 import { JobRunner, reconcileStaleJob } from "../jobs/runner";
 import type { LlmBackend } from "../llm/backend";
-import type { Brief } from "../recipes/brief";
+import { type Brief, servingsFor } from "../recipes/brief";
+import { scaleRecipe } from "../recipes/scale";
+import type { Recipe } from "../recipes/schema";
+import { favoriteId, type FavoriteStore } from "../store/favorites";
 import type { Week, WeekStore } from "../store/weeks";
 import type { StoreConnector } from "../types";
 import { runCreateWeek, runPush, runReviseRecipe, type WorkflowDeps } from "../week/workflows";
@@ -15,6 +18,7 @@ export interface SessionStatus {
 
 export interface AppDeps {
   store: WeekStore;
+  favorites: FavoriteStore;
   backend: () => LlmBackend;
   openAuchan: () => Promise<OpenedStore>;
   loadContext: (connector: StoreConnector) => Promise<WeeklyContext>;
@@ -33,11 +37,13 @@ const MAX_INSTRUCTION = 500;
 
 export class MyFreshApp {
   readonly store: WeekStore;
+  readonly favorites: FavoriteStore;
   readonly runner: JobRunner;
   session: SessionStatus | null = null;
 
   constructor(private readonly deps: AppDeps) {
     this.store = deps.store;
+    this.favorites = deps.favorites;
     this.runner = new JobRunner({
       now: deps.now,
       onUpdate: (state) => {
@@ -126,10 +132,43 @@ export class MyFreshApp {
     return this.store.get(id)!;
   }
 
-  startCreateWeek(brief: Brief): Week {
+  /** Favoris à reprendre dans une nouvelle semaine, mis à l'échelle du foyer. */
+  private reusableFavorites(brief: Brief, favoriteIds: string[]): Recipe[] {
+    const ids = [...new Set(favoriteIds)];
+    if (ids.length > brief.dinners) {
+      const n = brief.dinners;
+      throw new ActionError(`Tu peux reprendre au plus ${n} favori${n > 1 ? "s" : ""} pour ${n} dîner${n > 1 ? "s" : ""}.`);
+    }
+    return ids.map((id) => {
+      const favorite = this.favorites.get(id);
+      if (!favorite) throw new ActionError("Un des favoris choisis n'existe plus : recharge la page.");
+      return { ...scaleRecipe(favorite.recipe, servingsFor(brief)), id: `favori-${favorite.id}` };
+    });
+  }
+
+  startCreateWeek(brief: Brief, favoriteIds: string[] = []): Week {
     this.assertIdle();
+    const reused = this.reusableFavorites(brief, favoriteIds);
     const week = this.store.create(brief, this.now());
+    if (reused.length) {
+      this.store.update(week.id, (w) => {
+        w.reusedRecipes = reused;
+      });
+    }
     return this.launchCreate(week.id);
+  }
+
+  /** Met une recette de la semaine en favori, ou l'en retire. */
+  setFavorite(weekId: string, recipeId: string, favorite: boolean): void {
+    const week = this.requireWeek(weekId);
+    const recipe = week.recipes.find((r) => r.id === recipeId);
+    if (!recipe) throw new ActionError("Recette introuvable.");
+    if (favorite) this.favorites.add(recipe, weekId, this.now());
+    else this.favorites.remove(favoriteId(recipe.title));
+  }
+
+  removeFavorite(id: string): void {
+    if (!this.favorites.remove(id)) throw new ActionError("Favori introuvable.");
   }
 
   retryCreateWeek(id: string): Week {

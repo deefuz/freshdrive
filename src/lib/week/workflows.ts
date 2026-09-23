@@ -111,12 +111,17 @@ export async function runCreateWeek(
       w.contextSummary = summarizeContext(ctx);
     });
 
+    const reused = week.reusedRecipes ?? [];
+    const reusedIds = new Set(reused.map((r) => r.id));
     let recipes = week.recipes;
     if (!recipes.length) {
       job.step(`Génération des recettes (${deps.backend.label})`);
-      recipes = await deps.backend.generateMenu(week.brief, ctx, {
+      const generated = await deps.backend.generateMenu(week.brief, ctx, {
         avoidTitles: recentSelectedTitles(deps.store.list(), weekId),
+        plannedTitles: reused.map((r) => r.title),
       });
+      // favoris d'abord ; un identifiant généré identique à celui d'un favori est renommé
+      recipes = [...reused, ...generated.map((r) => (reusedIds.has(r.id) ? { ...r, id: `${r.id}-2` } : r))];
       // enregistrées tout de suite : une relance après un échec ne rappelle pas Claude
       deps.store.update(weekId, (w) => {
         w.recipes = recipes;
@@ -125,12 +130,16 @@ export async function runCreateWeek(
 
     const { matches, warnings } = await matchFor(aggregateNeeds(recipes), week.brief, connector, deps, job);
     const overrides = initialOverrides(matches, opts.includePantryStaples);
-    const selected = chooseSelection(
-      recipes.map((r) => r.id),
+    // favoris repris retenus d'office, puis les recettes les moins chères jusqu'au nombre de dîners
+    const ids = recipes.map((r) => r.id);
+    const forced = ids.filter((id) => reusedIds.has(id)).slice(0, week.brief.dinners);
+    const cheapest = chooseSelection(
+      ids.filter((id) => !forced.includes(id)),
       matches,
-      week.brief.dinners,
+      week.brief.dinners - forced.length,
       new Set(overrides.pantry),
     );
+    const selected = ids.filter((id) => forced.includes(id) || cheapest.includes(id));
     deps.store.update(weekId, (w) => {
       w.matches = matches;
       w.overrides = overrides;

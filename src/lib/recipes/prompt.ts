@@ -53,13 +53,23 @@ function briefBlock(brief: Brief): string {
 export interface MenuPromptOptions {
   /** titres des recettes retenues ces dernières semaines, à ne pas reproposer */
   avoidTitles?: string[];
+  /** titres des recettes favorites déjà ajoutées au menu de la semaine */
+  plannedTitles?: string[];
 }
 
 function menuOptionsBlock(options: MenuPromptOptions): string {
   const avoid = options.avoidTitles ?? [];
-  return avoid.length
-    ? `Recettes servies ces dernières semaines, à éviter (ni la même recette, ni une variante très proche) : ${avoid.join(" ; ")}.`
-    : "";
+  const planned = options.plannedTitles ?? [];
+  return [
+    avoid.length
+      ? `Recettes servies ces dernières semaines, à éviter (ni la même recette, ni une variante très proche) : ${avoid.join(" ; ")}.`
+      : "",
+    planned.length
+      ? `Déjà au menu cette semaine (recettes favorites reprises : ne les propose pas, mais tu peux partager des ingrédients avec elles) : ${planned.join(" ; ")}.`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 }
 
 export function buildMenuPrompt(brief: Brief, ctx: WeeklyContext, options: MenuPromptOptions = {}): string {

@@ -9,6 +9,7 @@ import { NoStoreError } from "../auchan/open";
 import type { WeeklyContext } from "../context/build";
 import type { LlmBackend } from "../llm/backend";
 import type { Brief } from "../recipes/brief";
+import { favoriteId as favoriteIdOf, FavoriteStore } from "../store/favorites";
 import { WeekStore } from "../store/weeks";
 import { ActionError, type AppDeps, MyFreshApp } from "./service";
 
@@ -55,15 +56,17 @@ function setup(backend: LlmBackend = fakeBackend({ generateMenu: vi.fn(async () 
     riz: [makeProduct({ name: "Riz", price: 2, pack: { value: 500, unit: "g" } })],
   });
   const store = new WeekStore(dir);
+  const favorites = new FavoriteStore(path.join(dir, "favoris", "favorites.json"));
   const app = new MyFreshApp({
     store,
+    favorites,
     backend: () => backend,
     openAuchan: async () => ({ connector, source: "chrome", warnings: [] }),
     loadContext: async () => ctx,
     now: () => new Date("2026-09-23T10:00:00.000Z"),
     ...overrides,
   });
-  return { app, store, connector };
+  return { app, store, favorites, connector };
 }
 
 describe("MyFreshApp", () => {
@@ -212,5 +215,49 @@ describe("MyFreshApp", () => {
     const status = await app.checkSession();
     expect(status.ok).toBe(false);
     expect(status.message).toMatch(/aucun drive/);
+  });
+
+  it("setFavorite : étoile une recette de la semaine, puis la retire", async () => {
+    const { app, favorites } = setup();
+    const { id } = app.startCreateWeek(brief);
+    await app.runner.idle();
+    app.setFavorite(id, "pates", true);
+    expect(favorites.list()).toMatchObject([
+      { id: favoriteIdOf(recipes[0].title), sourceWeekId: id, addedAt: "2026-09-23T10:00:00.000Z" },
+    ]);
+    expect(favorites.has(recipes[0].title)).toBe(true);
+    app.setFavorite(id, "pates", false);
+    expect(favorites.list()).toEqual([]);
+    expect(() => app.setFavorite(id, "inconnue", true)).toThrow(ActionError);
+    expect(() => app.setFavorite("../x", "pates", true)).toThrow(/Semaine introuvable/);
+  });
+
+  it("removeFavorite : favori inconnu refusé", () => {
+    const { app } = setup();
+    expect(() => app.removeFavorite("inconnu")).toThrow(/Favori introuvable/);
+  });
+
+  it("startCreateWeek reprend un favori : mis à l'échelle du foyer, ajouté au menu et retenu d'office", async () => {
+    const { app, favorites } = setup();
+    const soupe = makeRecipe({ id: "soupe", title: "Soupe", servings: 4, ingredients: [ing("pates", 200)] });
+    favorites.add(soupe, "2026-09-16-1");
+    const week = app.startCreateWeek(brief, ["soupe", "soupe"]);
+    expect(week.reusedRecipes).toEqual([
+      { ...soupe, id: "favori-soupe", servings: 2, ingredients: [{ ...soupe.ingredients[0], quantity: 100 }] },
+    ]);
+    await app.runner.idle();
+    const done = app.getWeek(week.id)!;
+    expect(done.recipes.map((r) => r.id)).toEqual(["favori-soupe", "pates", "riz"]);
+    expect(done.selectedRecipeIds).toEqual(["favori-soupe"]);
+  });
+
+  it("startCreateWeek refuse un favori disparu ou trop de favoris, sans créer de semaine", () => {
+    const { app, favorites, store } = setup();
+    expect(() => app.startCreateWeek(brief, ["disparu"])).toThrow(/n'existe plus/);
+    favorites.add(makeRecipe({ title: "A" }), "2026-09-16-1");
+    favorites.add(makeRecipe({ title: "B" }), "2026-09-16-1");
+    expect(() => app.startCreateWeek(brief, ["a", "b"])).toThrow("Tu peux reprendre au plus 1 favori pour 1 dîner.");
+    expect(store.list()).toEqual([]);
+    expect(app.runner.current()).toBeNull();
   });
 });

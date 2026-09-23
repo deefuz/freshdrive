@@ -69,6 +69,13 @@ describe("buildMenuPrompt : recettes à éviter", () => {
     );
   });
 
+  it("annonce les favoris déjà au menu", () => {
+    const p = buildMenuPrompt(brief, ctx, { plannedTitles: ["Riz cantonais"] });
+    expect(p).toContain(
+      "Déjà au menu cette semaine (recettes favorites reprises : ne les propose pas, mais tu peux partager des ingrédients avec elles) : Riz cantonais.",
+    );
+  });
+
   it("rien à éviter : pas de ligne", () => {
     expect(buildMenuPrompt(brief, ctx, { avoidTitles: [] })).not.toContain("à éviter");
     expect(buildMenuPrompt(brief, ctx)).not.toContain("à éviter");

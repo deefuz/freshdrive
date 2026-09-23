@@ -1,6 +1,7 @@
 import { openAuchan } from "../auchan/open";
 import { loadWeeklyContext } from "../context/cache";
 import { selectBackend } from "../llm/backend";
+import { FavoriteStore } from "../store/favorites";
 import { WeekStore } from "../store/weeks";
 import { MyFreshApp } from "./service";
 
@@ -13,6 +14,7 @@ const globalForApp = globalThis as typeof globalThis & { __myfreshApp?: MyFreshA
 export function getApp(): MyFreshApp {
   globalForApp.__myfreshApp ??= new MyFreshApp({
     store: new WeekStore(),
+    favorites: new FavoriteStore(),
     backend: () => selectBackend(),
     openAuchan: () => openAuchan(),
     loadContext: (connector) => loadWeeklyContext(connector),

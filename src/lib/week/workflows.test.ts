@@ -120,6 +120,22 @@ describe("runCreateWeek", () => {
     expect(backend.generateMenu).toHaveBeenCalledWith(brief, ctx, expect.objectContaining({ avoidTitles: ["Tacos"] }));
   });
 
+  it("favoris repris : placés en tête, annoncés à Claude et retenus d'office", async () => {
+    const favori = makeRecipe({ id: "favori-riz", title: "Riz cantonais", ingredients: [ing("riz", 500)] });
+    const generated = [...menu(), makeRecipe({ id: "favori-riz", title: "Homonyme", ingredients: [ing("courgette", 300)] })];
+    const backend = fakeBackend({ generateMenu: vi.fn(async () => generated) });
+    const id = newWeek();
+    store.update(id, (w) => {
+      w.reusedRecipes = [favori];
+    });
+    await runCreateWeek(id, deps(backend), jobRecorder());
+    const week = store.get(id)!;
+    expect(backend.generateMenu).toHaveBeenCalledWith(brief, ctx, { avoidTitles: [], plannedTitles: ["Riz cantonais"] });
+    expect(week.recipes.map((r) => r.id)).toEqual(["favori-riz", "pates-tomate", "riz-tomate", "favori-riz-2"]);
+    // 1 dîner : seul le favori est retenu, quel que soit le coût des recettes générées
+    expect(week.selectedRecipeIds).toEqual(["favori-riz"]);
+  });
+
   it("useArbiter: false : Claude n'arbitre pas les produits", async () => {
     const backend = fakeBackend({ generateMenu: vi.fn(async () => menu()) });
     const id = newWeek();

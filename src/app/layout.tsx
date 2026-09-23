@@ -31,6 +31,9 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
                 <Link href="/depenses" className="hover:underline">
                   Mes dépenses
                 </Link>
+                <Link href="/profil" className="hover:underline">
+                  Mon profil
+                </Link>
               </div>
             </div>
             <Link href="/semaines/nouvelle" className={btn.secondary}>

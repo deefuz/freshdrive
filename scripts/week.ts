@@ -11,10 +11,12 @@ import { loadWeeklyContext } from "@/lib/context/cache";
 import type { JobContext } from "@/lib/jobs/runner";
 import { formatEur } from "@/lib/format";
 import { selectBackend } from "@/lib/llm/backend";
+import { ProfileStore } from "@/lib/profile/store";
 import { type Brief, BriefSchema } from "@/lib/recipes/brief";
 import { buildRequestDocument, parseRecipesFile } from "@/lib/recipes/handoff";
 import { type Week, WeekStore } from "@/lib/store/weeks";
 import { type WeekTotals, weekTotals } from "@/lib/week/edit";
+import { withProfile } from "@/lib/week/brief-form";
 import { recentSelectedTitles } from "@/lib/week/history";
 import { runCreateWeek, runPush, type WorkflowDeps } from "@/lib/week/workflows";
 
@@ -66,7 +68,7 @@ function printWeek(week: Week): WeekTotals {
 async function main() {
   console.log("⚠ Ne lance pas le CLI et l'app web en même temps sur la même semaine.");
 
-  const brief = loadBrief(argValue("--brief") ?? "data/brief.json");
+  const brief = withProfile(loadBrief(argValue("--brief") ?? "data/brief.json"), new ProfileStore().get());
   const recipesFile = argValue("--from-recipes");
   const today = new Date().toISOString().slice(0, 10);
 

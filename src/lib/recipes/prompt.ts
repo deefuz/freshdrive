@@ -1,6 +1,7 @@
 import { rankWaaohOffers } from "../budget/promo";
 import type { WeeklyContext } from "../context/build";
 import { formatEur } from "../format";
+import { profilePromptBlock } from "../profile/profile";
 import type { Product } from "../types";
 import { type Brief, type DietFilter, servingsFor } from "./brief";
 import type { Recipe } from "./schema";
@@ -13,6 +14,7 @@ const FILTER_LABELS: Record<DietFilter, string> = {
 };
 
 export const SYSTEM_PROMPT = `Tu es le chef d'un service de box repas familiales, en France.
+Les allergies du foyer sont des interdits absolus et tu n'utilises que le matériel de cuisine indiqué quand il est précisé.
 Tu composes des dîners faisables en semaine avec des produits d'un supermarché Auchan Drive.
 Tu privilégies les produits en promotion et de saison fournis, ainsi que ceux qui créditent la carte fidélité Waaoh (cagnotte), en priorité ceux qui rapportent le plus ; pour une offre « sur le 2ème », prévois une quantité qui justifie deux paquets quand c'est raisonnable. Tu réutilises un même produit dans plusieurs recettes pour limiter le gaspillage et tu respectes strictement les contraintes alimentaires.
 Les quantités d'ingrédients sont des totaux pour la recette, en g, ml ou pièces (pce), cohérents avec le nombre de portions.
@@ -56,6 +58,7 @@ function briefBlock(brief: Brief): string {
     `Contraintes :\n${constraints}`,
     brief.preferOrganic ? "Préférence pour le bio quand c'est raisonnable." : "",
     brief.notes ? `Précisions : ${brief.notes}` : "",
+    brief.profile ? profilePromptBlock(brief.profile) : "",
   ]
     .filter(Boolean)
     .join("\n");

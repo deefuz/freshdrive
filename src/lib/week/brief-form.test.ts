@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { parseBriefForm } from "./brief-form";
+import { EMPTY_PROFILE } from "../profile/profile";
+import { DEFAULT_BRIEF, parseBriefForm, withProfile } from "./brief-form";
 
 function form(entries: [string, string][]): FormData {
   const f = new FormData();
@@ -55,5 +56,18 @@ describe("parseBriefForm", () => {
       ok: false,
       error: "Vérifie les contraintes.",
     });
+  });
+});
+
+describe("withProfile", () => {
+  const profile = { ...EMPTY_PROFILE, appliances: ["oven" as const] };
+
+  it("joint le profil actuel au brief, à la place d'un ancien", () => {
+    const old = withProfile(DEFAULT_BRIEF, { ...EMPTY_PROFILE, habits: "ancien" });
+    expect(withProfile(old, profile).profile).toEqual(profile);
+  });
+
+  it("retire le profil s'il est vide", () => {
+    expect(withProfile(withProfile(DEFAULT_BRIEF, profile), EMPTY_PROFILE)).not.toHaveProperty("profile");
   });
 });

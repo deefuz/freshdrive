@@ -1,3 +1,4 @@
+import { EMPTY_PROFILE, type Profile, profilePromptBlock } from "../profile/profile";
 import { type Brief, BriefSchema, type DietFilter } from "../recipes/brief";
 import { round2 } from "../units";
 
@@ -54,4 +55,11 @@ export function parseBriefForm(form: FormData): BriefFormResult {
   if (result.success) return { ok: true, brief: result.data };
   const fields = [...new Set(result.error.issues.map((i) => String(i.path[0])))];
   return { ok: false, error: `Vérifie ${fields.map((f) => FIELD_LABELS[f] ?? f).join(", ")}.` };
+}
+
+/** Brief de la semaine avec le profil actuel du foyer (retiré s'il est vide). */
+export function withProfile(brief: Brief, profile: Profile = EMPTY_PROFILE): Brief {
+  const rest = { ...brief };
+  delete rest.profile;
+  return profilePromptBlock(profile) ? { ...rest, profile } : rest;
 }

@@ -61,6 +61,36 @@ describe("buildMenuPrompt", () => {
   });
 });
 
+describe("buildMenuPrompt : profil du foyer", () => {
+  it("reprend le profil enregistré avec la semaine (allergies, matériel)", () => {
+    const p = buildMenuPrompt(
+      {
+        ...brief,
+        profile: {
+          members: [{ name: "Léa", kind: "child", age: 7, allergies: ["peanuts"], otherAllergies: "", dislikes: "" }],
+          appliances: ["oven"],
+          otherAppliances: "",
+          utensils: [],
+          otherUtensils: "",
+          weeknightMaxMinutes: 30,
+          habits: "",
+          likes: "",
+          avoid: "",
+        },
+      },
+      ctx,
+    );
+    expect(p).toContain("ALLERGIES (interdits absolus, aucune trace dans aucune recette) : arachides (Léa).");
+    expect(p).toContain("Appareils disponibles (n'en suppose aucun autre) : four.");
+    expect(p).toContain("30 min maximum");
+    expect(SYSTEM_PROMPT).toContain("allergies");
+  });
+
+  it("sans profil : rien de plus", () => {
+    expect(buildMenuPrompt(brief, ctx)).not.toContain("ALLERGIES");
+  });
+});
+
 describe("buildMenuPrompt : carte Waaoh", () => {
   it("liste les produits qui créditent la carte Waaoh, du plus au moins rémunérateur", () => {
     const p = buildMenuPrompt(brief, {

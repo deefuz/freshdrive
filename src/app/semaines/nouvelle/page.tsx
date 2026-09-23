@@ -1,7 +1,10 @@
 import { connection } from "next/server";
 import { getApp } from "@/lib/app/instance";
+import Link from "next/link";
+import { householdCounts } from "@/lib/profile/profile";
+import { ProfileStore } from "@/lib/profile/store";
 import { DEFAULT_BRIEF } from "@/lib/week/brief-form";
-import { notice, pageTitle } from "@/app/_components/ui";
+import { link, notice, pageTitle } from "@/app/_components/ui";
 import { BriefForm } from "./brief-form";
 
 export default async function NewWeekPage({
@@ -12,7 +15,9 @@ export default async function NewWeekPage({
   const { favori } = await searchParams;
   await connection();
   const app = getApp();
-  const brief = app.store.latestBrief() ?? DEFAULT_BRIEF;
+  const profile = new ProfileStore().get();
+  // le foyer du profil prime sur les nombres de la dernière semaine
+  const brief = { ...(app.store.latestBrief() ?? DEFAULT_BRIEF), ...householdCounts(profile) };
   const favorites = app.favorites.list().map((f) => ({ id: f.id, title: f.recipe.title }));
   const preselected = [favori ?? []].flat().filter((id) => favorites.some((f) => f.id === id));
   return (
@@ -21,7 +26,11 @@ export default async function NewWeekPage({
         <h1 className={pageTitle}>Nouvelle semaine</h1>
         <p className="max-w-[65ch] text-graphite">
           Pré-rempli avec ta dernière semaine. MyFresh propose deux recettes de plus que le nombre de dîners, pour que
-          tu puisses choisir.
+          tu puisses choisir. Allergies, matériel et habitudes viennent de{" "}
+          <Link href="/profil" className={link}>
+            ton profil
+          </Link>
+          .
         </p>
       </div>
       {app.runner.isBusy() && (

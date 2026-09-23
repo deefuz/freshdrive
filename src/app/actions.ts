@@ -4,7 +4,9 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { type ActionResult, failure, formValues, OK } from "@/lib/app/action-result";
 import { getApp } from "@/lib/app/instance";
-import { parseBriefForm } from "@/lib/week/brief-form";
+import { ProfileSchema } from "@/lib/profile/profile";
+import { ProfileStore } from "@/lib/profile/store";
+import { parseBriefForm, withProfile } from "@/lib/week/brief-form";
 import { chooseProduct, setPantry, toggleRecipe } from "@/lib/week/edit";
 
 /** Exécute une opération du service ; en cas de succès, la page courante est rendue à nouveau. */
@@ -30,7 +32,7 @@ export async function createWeekAction(_prev: ActionResult, formData: FormData):
   const favoriteIds = formData.getAll("favorites").map(String);
   let id: string;
   try {
-    id = getApp().startCreateWeek(parsed.brief, favoriteIds).id;
+    id = getApp().startCreateWeek(withProfile(parsed.brief, new ProfileStore().get()), favoriteIds).id;
   } catch (e) {
     return failure(e, formValues(formData));
   }
@@ -86,4 +88,22 @@ export async function toggleFavoriteAction(weekId: string, recipeId: string, fav
 
 export async function removeFavoriteAction(favoriteId: string): Promise<ActionResult> {
   return attempt(() => getApp().removeFavorite(String(favoriteId)));
+}
+
+/** Enregistre le profil du foyer (envoyé en JSON par le formulaire de /profil). */
+export async function saveProfileAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
+  let data: unknown;
+  try {
+    data = JSON.parse(String(formData.get("profile") ?? ""));
+  } catch {
+    return { error: "Le profil envoyé est illisible : recharge la page." };
+  }
+  const parsed = ProfileSchema.safeParse(data);
+  if (!parsed.success) {
+    const nameless = parsed.error.issues.some((i) => i.path.includes("name"));
+    return { error: nameless ? "Donne un prénom à chaque personne du foyer." : "Vérifie les champs du profil." };
+  }
+  new ProfileStore().save(parsed.data);
+  refresh();
+  return OK;
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ProfileSchema } from "../profile/profile";
 
 export const DIET_FILTERS = ["kids_friendly", "low_calorie", "vegan", "unprocessed"] as const;
 export type DietFilter = (typeof DIET_FILTERS)[number];
@@ -11,6 +12,8 @@ export const BriefSchema = z.object({
   filters: z.array(z.enum(DIET_FILTERS)),
   notes: z.string(),
   preferOrganic: z.boolean(),
+  /** profil du foyer au moment de la création de la semaine (allergies, matériel, habitudes) */
+  profile: ProfileSchema.optional(),
 });
 export type Brief = z.infer<typeof BriefSchema>;
 

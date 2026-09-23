@@ -56,11 +56,39 @@ describe("pdfResponse", () => {
     expect(render).not.toHaveBeenCalled();
   });
 
-  it("requête venue d'un autre site : 403, sans navigateur", async () => {
+  it("requête venue d'un autre site (cross-site) : 403, sans navigateur", async () => {
     const { deps, render } = setup();
     const res = await pdfResponse(request("", { "sec-fetch-site": "cross-site" }), "2026-09-23-1", deps);
     expect(res.status).toBe(403);
     expect(render).not.toHaveBeenCalled();
+  });
+
+  it("requête venue d'un site apparenté (same-site) : 403, sans navigateur", async () => {
+    const { deps, render } = setup();
+    const res = await pdfResponse(request("", { "sec-fetch-site": "same-site" }), "2026-09-23-1", deps);
+    expect(res.status).toBe(403);
+    expect(render).not.toHaveBeenCalled();
+  });
+
+  it("requête same-origin : autorisée", async () => {
+    const { deps, render } = setup();
+    const res = await pdfResponse(request("", { "sec-fetch-site": "same-origin" }), "2026-09-23-1", deps);
+    expect(res.status).toBe(200);
+    expect(render).toHaveBeenCalled();
+  });
+
+  it("requête sec-fetch-site: none (barre d'adresse, favori) : autorisée", async () => {
+    const { deps, render } = setup();
+    const res = await pdfResponse(request("", { "sec-fetch-site": "none" }), "2026-09-23-1", deps);
+    expect(res.status).toBe(200);
+    expect(render).toHaveBeenCalled();
+  });
+
+  it("sans en-tête sec-fetch-site (navigateur ancien) : autorisée", async () => {
+    const { deps, render } = setup();
+    const res = await pdfResponse(request(), "2026-09-23-1", deps);
+    expect(res.status).toBe(200);
+    expect(render).toHaveBeenCalled();
   });
 
   it("échec du rendu (Chromium absent, délai dépassé) : 500 avec un message en français", async () => {

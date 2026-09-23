@@ -12,6 +12,7 @@ import type { Brief } from "../recipes/brief";
 import { LlmError } from "../recipes/generate";
 import { type PushReport, WeekNotFoundError, type Week, type WeekStore } from "../store/weeks";
 import type { Product, StoreConnector } from "../types";
+import { normalizeText } from "../text";
 import { initialOverrides, reconcileOverrides, weekTotals } from "./edit";
 import { recentSelectedTitles } from "./history";
 
@@ -116,9 +117,11 @@ export async function runCreateWeek(
     let recipes = week.recipes;
     if (!recipes.length) {
       job.step(`Génération des recettes (${deps.backend.label})`);
+      const plannedTitles = reused.map((r) => r.title);
+      const plannedKeys = new Set(plannedTitles.map((t) => normalizeText(t)));
       const generated = await deps.backend.generateMenu(week.brief, ctx, {
-        avoidTitles: recentSelectedTitles(deps.store.list(), weekId),
-        plannedTitles: reused.map((r) => r.title),
+        avoidTitles: recentSelectedTitles(deps.store.list(), weekId).filter((t) => !plannedKeys.has(normalizeText(t))),
+        plannedTitles,
       });
       // favoris d'abord ; un identifiant généré identique à celui d'un favori est renommé
       recipes = [...reused, ...generated.map((r) => (reusedIds.has(r.id) ? { ...r, id: `${r.id}-2` } : r))];

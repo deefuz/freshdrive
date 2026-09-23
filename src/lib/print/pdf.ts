@@ -39,8 +39,10 @@ const text = (body: string, status: number) =>
   new Response(body, { status, headers: { "content-type": "text/plain; charset=utf-8" } });
 
 /** Réponse de GET /semaines/<id>/pdf : la page d'impression rendue en PDF, en téléchargement. */
+const ALLOWED_SEC_FETCH_SITES = new Set([null, "same-origin", "none"]);
+
 export async function pdfResponse(request: Request, id: string, deps: PdfDeps): Promise<Response> {
-  if (request.headers.get("sec-fetch-site") === "cross-site") return text("Accès refusé.", 403);
+  if (!ALLOWED_SEC_FETCH_SITES.has(request.headers.get("sec-fetch-site"))) return text("Accès refusé.", 403);
   const week = isWeekId(id) ? deps.getWeek(id) : null;
   if (!week) return text("Semaine introuvable.", 404);
   if (!isPrintable(week)) return text("Rien à imprimer : la semaine n'est pas prête ou aucune recette n'est retenue.", 409);

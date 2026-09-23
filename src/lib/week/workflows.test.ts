@@ -120,6 +120,26 @@ describe("runCreateWeek", () => {
     expect(backend.generateMenu).toHaveBeenCalledWith(brief, ctx, expect.objectContaining({ avoidTitles: ["Tacos"] }));
   });
 
+  it("favori repris dont le titre a été retenu récemment : annoncé, jamais dans les titres à éviter", async () => {
+    const favori = makeRecipe({ id: "favori-riz", title: "Riz cantonais", ingredients: [ing("riz", 500)] });
+    const past = store.create(brief, new Date(2026, 8, 16, 12));
+    store.update(past.id, (w) => {
+      w.recipes = [makeRecipe({ id: "a", title: "Riz cantonais" }), makeRecipe({ id: "b", title: "Tacos" })];
+      w.selectedRecipeIds = ["a", "b"];
+      w.status = "ready";
+    });
+    const backend = fakeBackend({ generateMenu: vi.fn(async () => menu()) });
+    const id = newWeek();
+    store.update(id, (w) => {
+      w.reusedRecipes = [favori];
+    });
+    await runCreateWeek(id, deps(backend), jobRecorder());
+    expect(backend.generateMenu).toHaveBeenCalledWith(brief, ctx, {
+      avoidTitles: ["Tacos"],
+      plannedTitles: ["Riz cantonais"],
+    });
+  });
+
   it("favoris repris : placés en tête, annoncés à Claude et retenus d'office", async () => {
     const favori = makeRecipe({ id: "favori-riz", title: "Riz cantonais", ingredients: [ing("riz", 500)] });
     const generated = [...menu(), makeRecipe({ id: "favori-riz", title: "Homonyme", ingredients: [ing("courgette", 300)] })];

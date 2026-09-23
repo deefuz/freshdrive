@@ -28,7 +28,7 @@ ${buildMenuPrompt(brief, ctx, options)}
 ## Schéma JSON attendu
 
 \`\`\`json
-${JSON.stringify(z.toJSONSchema(MenuSchema), null, 2)}
+${JSON.stringify(z.toJSONSchema(MenuSchema, { target: "draft-7" }), null, 2)}
 \`\`\`
 `;
 }

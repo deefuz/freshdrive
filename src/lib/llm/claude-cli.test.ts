@@ -40,7 +40,10 @@ describe("runClaudeStructured", () => {
     const [cmd, args, opts] = exec.mock.calls[0];
     expect(cmd).toBe("claude");
     expect(args[1]).toBe("Question ?");
-    expect(JSON.parse(args[args.indexOf("--json-schema") + 1]).properties.answer).toBeDefined();
+    const jsonSchema = JSON.parse(args[args.indexOf("--json-schema") + 1]);
+    expect(jsonSchema.properties.answer).toBeDefined();
+    // Claude Code refuse le méta-schéma 2020-12 (vérifié en réel) : draft-07 obligatoire.
+    expect(jsonSchema.$schema).toBe("http://json-schema.org/draft-07/schema#");
     expect(opts.timeoutMs).toBe(CLAUDE_TIMEOUT_MS);
   });
 

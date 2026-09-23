@@ -87,7 +87,7 @@ export async function runClaudeStructured<S extends z.ZodType>(
 ): Promise<z.output<S>> {
   const exec = deps.exec ?? nodeExec;
   const timeoutMs = deps.timeoutMs ?? CLAUDE_TIMEOUT_MS;
-  const res = await exec(deps.command ?? "claude", claudeArgs(prompt, z.toJSONSchema(schema)), { timeoutMs });
+  const res = await exec(deps.command ?? "claude", claudeArgs(prompt, z.toJSONSchema(schema, { target: "draft-7" })), { timeoutMs });
   if (res.notFound) {
     throw new LlmError("Commande « claude » introuvable : installe Claude Code, ou définis ANTHROPIC_API_KEY pour passer par l'API.");
   }

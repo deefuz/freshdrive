@@ -24,7 +24,7 @@ Le projet tourne sur macOS, Linux et Windows. Sur macOS, FreshDrive reprend tout
 ### 1. Récupérer le projet
 
 ```bash
-git clone https://github.com/<ton-pseudo-github>/freshdrive.git
+git clone https://github.com/deefuz/freshdrive.git
 cd freshdrive
 npm install
 npx playwright install chromium

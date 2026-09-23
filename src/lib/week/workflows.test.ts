@@ -11,7 +11,7 @@ import type { LlmBackend } from "../llm/backend";
 import type { Brief } from "../recipes/brief";
 import { WeekStore } from "../store/weeks";
 import { chooseProduct } from "./edit";
-import { runCreateWeek, runReviseRecipe, type WorkflowDeps } from "./workflows";
+import { runCreateWeek, runPush, runReviseRecipe, type WorkflowDeps } from "./workflows";
 
 const brief: Brief = { dinners: 1, adults: 2, children: 0, budgetEur: 30, filters: [], notes: "", preferOrganic: false };
 const ctx: WeeklyContext = {
@@ -185,5 +185,79 @@ describe("runReviseRecipe", () => {
     const before = store.get(id);
     await expect(runReviseRecipe(id, "zzz", "x", deps(backend), jobRecorder())).rejects.toThrow(/Recette introuvable/);
     expect(store.get(id)).toEqual(before);
+  });
+});
+
+describe("runPush", () => {
+  it("cumule avec le panier existant, enregistre le rapport et refuse un 2e envoi", async () => {
+    const id = newWeek();
+    await runCreateWeek(id, deps(fakeBackend({ generateMenu: vi.fn(async () => menu()) })), jobRecorder());
+    connector.cart.items = [{ productId: tomates.productId, offerId: tomates.offerId, quantity: 1 }];
+    const pushDeps = { store, openStore: async () => connector };
+
+    await runPush(id, pushDeps, jobRecorder(), () => new Date("2026-09-23T18:00:00.000Z"));
+
+    const week = store.get(id)!;
+    expect(week.status).toBe("pushed");
+    expect(connector.cart.items.find((i) => i.productId === tomates.productId)?.quantity).toBe(2);
+    expect(connector.cart.items.find((i) => i.productId === pates.productId)?.quantity).toBe(1);
+    expect(week.pushReport).toMatchObject({ pushedAt: "2026-09-23T18:00:00.000Z", adjusted: [], failed: [] });
+    expect(week.pushReport?.added.map((l) => l.name)).toEqual(["Tomates", "Pâtes"]);
+    await expect(runPush(id, pushDeps, jobRecorder())).rejects.toThrow(/déjà été envoyée/);
+    expect(connector.cart.items.find((i) => i.productId === tomates.productId)?.quantity).toBe(2);
+  });
+
+  it("refuse un panier vide ou une semaine pas prête", async () => {
+    const id = newWeek();
+    const pushDeps = { store, openStore: async () => connector };
+    await expect(runPush(id, pushDeps, jobRecorder())).rejects.toThrow(/pas prête/);
+    store.update(id, (w) => {
+      w.status = "ready";
+    });
+    await expect(runPush(id, pushDeps, jobRecorder())).rejects.toThrow(/Aucun produit/);
+  });
+
+  it("un envoi réussi laisse pushStartedAt renseigné en plus du statut pushed", async () => {
+    const id = newWeek();
+    await runCreateWeek(id, deps(fakeBackend({ generateMenu: vi.fn(async () => menu()) })), jobRecorder());
+    const pushDeps = { store, openStore: async () => connector };
+
+    await runPush(id, pushDeps, jobRecorder(), () => new Date("2026-09-23T18:00:00.000Z"));
+
+    const week = store.get(id)!;
+    expect(week.status).toBe("pushed");
+    expect(week.pushStartedAt).toBe("2026-09-23T18:00:00.000Z");
+  });
+
+  it("refuse une semaine dont l'envoi au panier a été interrompu (pushStartedAt sans rapport)", async () => {
+    const id = newWeek();
+    await runCreateWeek(id, deps(fakeBackend({ generateMenu: vi.fn(async () => menu()) })), jobRecorder());
+    store.update(id, (w) => {
+      w.pushStartedAt = "2026-09-23T17:00:00.000Z";
+    });
+    const spy = vi.spyOn(connector, "setCartQuantities");
+    const pushDeps = { store, openStore: async () => connector };
+
+    await expect(runPush(id, pushDeps, jobRecorder())).rejects.toThrow(/déjà été lancé/);
+    expect(spy).not.toHaveBeenCalled();
+    expect(store.get(id)!.pushReport).toBeNull();
+  });
+
+  it("enregistre pushStartedAt avant le premier appel à setCartQuantities", async () => {
+    const id = newWeek();
+    await runCreateWeek(id, deps(fakeBackend({ generateMenu: vi.fn(async () => menu()) })), jobRecorder());
+    const original = connector.setCartQuantities.bind(connector);
+    let pushStartedAtDuringFirstCall: string | null | undefined;
+    vi.spyOn(connector, "setCartQuantities").mockImplementation(async (lines) => {
+      if (pushStartedAtDuringFirstCall === undefined) {
+        pushStartedAtDuringFirstCall = store.get(id)?.pushStartedAt ?? null;
+      }
+      return original(lines);
+    });
+    const pushDeps = { store, openStore: async () => connector };
+
+    await runPush(id, pushDeps, jobRecorder(), () => new Date("2026-09-23T18:00:00.000Z"));
+
+    expect(pushStartedAtDuringFirstCall).toBe("2026-09-23T18:00:00.000Z");
   });
 });

@@ -1,4 +1,5 @@
 import { chooseSelection } from "../budget/basket";
+import { previewPush, productLabels, pushLines } from "../cart/push";
 import { summarizeContext, type WeeklyContext } from "../context/build";
 import type { JobContext } from "../jobs/runner";
 import type { LlmBackend } from "../llm/backend";
@@ -9,7 +10,7 @@ import type { ScoreOptions } from "../matching/score";
 import type { Brief } from "../recipes/brief";
 import { WeekNotFoundError, type Week, type WeekStore } from "../store/weeks";
 import type { Product, StoreConnector } from "../types";
-import { initialOverrides, reconcileOverrides } from "./edit";
+import { initialOverrides, reconcileOverrides, weekTotals } from "./edit";
 
 export interface WorkflowDeps {
   store: WeekStore;
@@ -152,5 +153,43 @@ export async function runReviseRecipe(
     w.overrides = reconcileOverrides(w.overrides, w.matches, matches, rematchKeys);
     w.recipes = recipes;
     w.matches = matches;
+  });
+}
+
+export async function runPush(
+  weekId: string,
+  deps: Pick<WorkflowDeps, "store" | "openStore">,
+  job: JobContext,
+  now: () => Date = () => new Date(),
+): Promise<void> {
+  const week = requireWeek(deps, weekId);
+  if (week.status === "pushed") throw new Error("Cette semaine a déjà été envoyée au panier.");
+  if (week.pushStartedAt) {
+    throw new Error(
+      "Un envoi au panier a déjà été lancé pour cette semaine (peut-être interrompu). Vérifie ton panier sur auchan.fr avant toute action.",
+    );
+  }
+  if (week.status !== "ready") throw new Error("La semaine n'est pas prête.");
+  const { basket } = weekTotals(week);
+  if (!basket.lines.length) throw new Error("Aucun produit à envoyer : retiens au moins une recette.");
+
+  job.step("Connexion à Auchan");
+  const connector = await deps.openStore();
+  job.step("Lecture du panier Auchan");
+  const { cartLines } = previewPush(await connector.getCart(), basket.lines);
+
+  // posé avant le premier envoi de ligne : si le serveur redémarre en cours de route, un 2e envoi est refusé.
+  deps.store.update(weekId, (w) => {
+    w.pushStartedAt = now().toISOString();
+  });
+
+  job.step("Ajout au panier Auchan");
+  const report = await pushLines(connector, cartLines, productLabels(basket.lines), {
+    onProgress: (done, total) => job.progress(done, total),
+    now: now(),
+  });
+  deps.store.update(weekId, (w) => {
+    w.pushReport = report;
+    w.status = "pushed";
   });
 }

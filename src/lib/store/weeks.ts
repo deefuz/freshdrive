@@ -62,6 +62,8 @@ export interface Week {
   status: WeekStatus;
   job: JobState | null;
   pushReport: PushReport | null;
+  /** posé avant le premier envoi de ligne au panier ; empêche un 2e envoi si le serveur redémarre en cours de route */
+  pushStartedAt?: string;
 }
 
 /** Vérification minimale d'un fichier de semaine : écarte l'ancien format du CLI et les fichiers abîmés. */

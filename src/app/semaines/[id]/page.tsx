@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { ActionButton } from "@/app/_components/action-button";
@@ -5,6 +6,7 @@ import { JobProgress } from "@/app/_components/job-progress";
 import { retryCreateAction } from "@/app/actions";
 import { getApp } from "@/lib/app/instance";
 import { formatWeekDate, JOB_LABELS } from "@/lib/format";
+import { isPrintable } from "@/lib/print/sheet";
 import { productRows, weekTotals } from "@/lib/week/edit";
 import { weekView } from "@/lib/week/view";
 import { BudgetBar } from "./_components/budget-bar";
@@ -52,7 +54,18 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
   const full = week.selectedRecipeIds.length >= week.brief.dinners;
   return (
     <div className="space-y-6">
-      {heading}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        {heading}
+        {isPrintable(week) && (
+          <Link
+            href={`/semaines/${week.id}/imprimer`}
+            prefetch={false}
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-zinc-100"
+          >
+            Imprimer / PDF
+          </Link>
+        )}
+      </div>
       {week.contextSummary && <p className="text-sm text-zinc-600">Contexte Auchan : {week.contextSummary}</p>}
       {week.job?.status === "error" && (
         <p role="alert" className="rounded-lg bg-red-50 p-3 text-sm text-red-800">

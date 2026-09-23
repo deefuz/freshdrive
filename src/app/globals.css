@@ -8,3 +8,15 @@
 body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
+
+/* Impression et PDF : A4, marges fixes, sans l'indicateur de développement de Next.js */
+@page {
+  size: A4;
+  margin: 12mm;
+}
+
+@media print {
+  nextjs-portal {
+    display: none;
+  }
+}

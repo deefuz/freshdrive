@@ -105,6 +105,13 @@ describe("toggleRecipe", () => {
     expect(toggleRecipe(toggleRecipe(w, "c", false), "a", true).selectedRecipeIds).toEqual(["a", "b"]);
   });
 
+  it("message au singulier pour une seule recette", () => {
+    const one = week();
+    one.brief = { ...one.brief, dinners: 1 };
+    one.selectedRecipeIds = ["a"];
+    expect(() => toggleRecipe(one, "b", true)).toThrow("Tu as déjà choisi 1 recette : décoches-en une d'abord.");
+  });
+
   it("refuse une recette inconnue", () => {
     expect(() => toggleRecipe(week(), "zzz", true)).toThrow(EditError);
   });

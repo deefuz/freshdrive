@@ -58,6 +58,16 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
           {JOB_LABELS[week.job.kind]} : échec. {week.job.error}
         </p>
       )}
+      {week.warnings?.map((w) => (
+        <p key={w} role="status" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
+          {w}
+        </p>
+      ))}
+      {week.status === "pushed" && (
+        <p role="status" className="rounded-lg bg-sky-50 p-3 text-sm text-sky-900">
+          Panier déjà envoyé : ces modifications ne changent plus ton panier Auchan.
+        </p>
+      )}
       {week.pushStartedAt && week.status !== "pushed" && (
         <p role="alert" className="rounded-lg bg-amber-50 p-3 text-sm text-amber-900">
           Un envoi au panier a déjà été lancé pour cette semaine (peut-être interrompu) : vérifie ton panier sur
@@ -83,6 +93,7 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
               recipe={r}
               selected={week.selectedRecipeIds.includes(r.id)}
               full={full}
+              pushed={week.status === "pushed"}
             />
           ))}
         </div>

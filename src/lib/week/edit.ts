@@ -77,7 +77,8 @@ export function toggleRecipe(week: Week, recipeId: string, selected: boolean): W
   const ids = new Set(week.selectedRecipeIds.filter((id) => id !== recipeId));
   if (selected) {
     if (ids.size >= week.brief.dinners) {
-      throw new EditError(`Tu as déjà choisi ${week.brief.dinners} recettes : décoches-en une d'abord.`);
+      const n = week.brief.dinners;
+      throw new EditError(`Tu as déjà choisi ${n} recette${n > 1 ? "s" : ""} : décoches-en une d'abord.`);
     }
     ids.add(recipeId);
   }

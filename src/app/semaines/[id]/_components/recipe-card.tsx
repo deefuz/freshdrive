@@ -7,11 +7,14 @@ export function RecipeCard({
   recipe,
   selected,
   full,
+  pushed,
 }: {
   weekId: string;
   recipe: Recipe;
   selected: boolean;
   full: boolean;
+  /** semaine déjà envoyée au panier : la recette ne peut plus être modifiée */
+  pushed: boolean;
 }) {
   const kids = new Set(recipe.kidSteps ?? []);
   const n = recipe.nutritionPerServing;
@@ -64,7 +67,7 @@ export function RecipeCard({
             Nutrition estimée par portion : {Math.round(n.kcal)} kcal · protéines {Math.round(n.proteinG)} g · glucides{" "}
             {Math.round(n.carbsG)} g · lipides {Math.round(n.fatG)} g
           </p>
-          <ReviseRecipeForm weekId={weekId} recipeId={recipe.id} />
+          {!pushed && <ReviseRecipeForm weekId={weekId} recipeId={recipe.id} />}
         </div>
       </details>
     </article>

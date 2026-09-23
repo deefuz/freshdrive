@@ -108,9 +108,40 @@ describe("MyFreshApp", () => {
   });
 
   it("startPush refuse un envoi déjà lancé mais interrompu (pushStartedAt sans statut pushed)", async () => {
-    const { app, store } = setup();
+    const openAuchan = vi.fn<AppDeps["openAuchan"]>(async () => {
+      throw new Error("ne doit pas être appelé");
+    });
+    const { app, store } = setup(undefined, { openAuchan });
     store.save(makeWeek({ status: "ready", pushStartedAt: "2026-09-23T09:00:00.000Z" }));
     expect(() => app.startPush("2026-09-23-1")).toThrow(/déjà été lancé/);
+    await app.runner.idle();
+    expect(openAuchan).not.toHaveBeenCalled();
+    expect(app.runner.current()).toBeNull();
+  });
+
+  it("identifiant de semaine inconnu ou forgé : ActionError, sans tâche lancée", () => {
+    const { app } = setup();
+    for (const id of ["2026-09-23-9", "../../etc/passwd", ""]) {
+      expect(() => app.startPush(id)).toThrow(ActionError);
+      expect(() => app.startReviseRecipe(id, "pates", "sans four")).toThrow(ActionError);
+      expect(() => app.retryCreateWeek(id)).toThrow(ActionError);
+      expect(() => app.edit(id, (w) => w)).toThrow(/Semaine introuvable/);
+    }
+    expect(app.runner.current()).toBeNull();
+  });
+
+  it("startReviseRecipe refuse une semaine déjà envoyée, mais les choix restent modifiables", async () => {
+    const { app } = setup();
+    const { id } = app.startCreateWeek(brief);
+    await app.runner.idle();
+    app.startPush(id);
+    await app.runner.idle();
+    expect(() => app.startReviseRecipe(id, "pates", "sans four")).toThrow(ActionError);
+    expect(() => app.startReviseRecipe(id, "pates", "sans four")).toThrow(
+      "Cette semaine a déjà été envoyée au panier : la recette ne peut plus être modifiée.",
+    );
+    expect(app.runner.current()?.kind).toBe("push");
+    expect(() => app.edit(id, (w) => w)).not.toThrow();
   });
 
   it("getWeek : une tâche « en cours » inconnue du serveur (redémarrage) passe en erreur, et c'est enregistré", () => {

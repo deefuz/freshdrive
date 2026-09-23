@@ -146,7 +146,10 @@ export class MyFreshApp {
     if (!text) throw new ActionError("Écris ce que tu veux changer dans la recette.");
     if (text.length > MAX_INSTRUCTION) throw new ActionError(`Consigne trop longue (${MAX_INSTRUCTION} caractères au maximum).`);
     const week = this.requireWeek(id);
-    if (week.status !== "ready" && week.status !== "pushed") throw new ActionError("La semaine n'est pas prête.");
+    if (week.status === "pushed") {
+      throw new ActionError("Cette semaine a déjà été envoyée au panier : la recette ne peut plus être modifiée.");
+    }
+    if (week.status !== "ready") throw new ActionError("La semaine n'est pas prête.");
     if (!week.recipes.some((r) => r.id === recipeId)) throw new ActionError("Recette introuvable.");
     this.assertIdle();
     this.runner.start(id, "revise-recipe", (job) => runReviseRecipe(id, recipeId, text, this.workflowDeps(), job));

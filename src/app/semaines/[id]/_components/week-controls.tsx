@@ -124,6 +124,7 @@ export function ReviseRecipeForm({ weekId, recipeId }: { weekId: string; recipeI
           rows={2}
           maxLength={500}
           required
+          defaultValue={state.values?.instruction?.[0] ?? ""}
           placeholder="Ex. : moins épicé, sans four, remplacer le poisson par du poulet"
           className="mt-1 w-full rounded-lg border border-zinc-300 px-2 py-1 font-normal"
         />

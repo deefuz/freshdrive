@@ -2,7 +2,7 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
-import { type ActionResult, failure, OK } from "@/lib/app/action-result";
+import { type ActionResult, failure, formValues, OK } from "@/lib/app/action-result";
 import { getApp } from "@/lib/app/instance";
 import { parseBriefForm } from "@/lib/week/brief-form";
 import { chooseProduct, setPantry, toggleRecipe } from "@/lib/week/edit";
@@ -26,12 +26,12 @@ export async function checkSessionAction(): Promise<ActionResult> {
 
 export async function createWeekAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const parsed = parseBriefForm(formData);
-  if (!parsed.ok) return { error: parsed.error };
+  if (!parsed.ok) return { error: parsed.error, values: formValues(formData) };
   let id: string;
   try {
     id = getApp().startCreateWeek(parsed.brief).id;
   } catch (e) {
-    return failure(e);
+    return failure(e, formValues(formData));
   }
   redirect(`/semaines/${id}`);
 }
@@ -58,9 +58,10 @@ export async function reviseRecipeAction(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  return attempt(() =>
+  const result = await attempt(() =>
     getApp().startReviseRecipe(String(weekId), String(recipeId), String(formData.get("instruction") ?? "")),
   );
+  return result.error ? { ...result, values: formValues(formData) } : result;
 }
 
 export async function confirmPushAction(weekId: string): Promise<ActionResult> {

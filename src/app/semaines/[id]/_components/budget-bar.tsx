@@ -49,13 +49,13 @@ export function BudgetBar({
       </div>
       <div className="mt-3">
         {pushed ? (
-          <Link href={`/semaines/${weekId}/panier`} className={primary}>
+          <Link href={`/semaines/${weekId}/panier`} prefetch={false} className={primary}>
             Voir le rapport d&apos;envoi
           </Link>
         ) : selected === 0 ? (
           <p className="text-sm text-zinc-500">Retiens au moins une recette pour préparer le panier.</p>
         ) : (
-          <Link href={`/semaines/${weekId}/panier`} className={primary}>
+          <Link href={`/semaines/${weekId}/panier`} prefetch={false} className={primary}>
             Vérifier le panier ({selected}/{dinners} dîners) →
           </Link>
         )}

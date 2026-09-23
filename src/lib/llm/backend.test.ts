@@ -84,6 +84,7 @@ describe("createClaudeCodeBackend", () => {
 describe("selectBackend", () => {
   it("Claude Code par défaut, l'API si ANTHROPIC_API_KEY est défini", () => {
     expect(selectBackend({}).name).toBe("claude-code");
+    expect(selectBackend({ ANTHROPIC_API_KEY: "" }).name).toBe("claude-code");
     expect(selectBackend({ ANTHROPIC_API_KEY: "sk-test" })).toMatchObject({ name: "api", label: "API Anthropic" });
   });
 });

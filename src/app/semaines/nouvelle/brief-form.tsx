@@ -11,20 +11,23 @@ const label = "block text-sm font-medium";
 
 export function BriefForm({ initial }: { initial: Brief }) {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(createWeekAction, { error: null });
+  // après un refus, on réaffiche ce qui a été saisi (React réinitialise le formulaire après l'action)
+  const sent = state.values;
+  const text = (name: string, fallback: string | number) => sent?.[name]?.[0] ?? String(fallback);
   return (
     <form action={formAction} className="space-y-5 rounded-xl border border-zinc-200 bg-white p-5">
       <div className="grid gap-4 sm:grid-cols-4">
         <label className={label}>
           Dîners
-          <input name="dinners" type="number" min={1} max={7} required defaultValue={initial.dinners} className={field} />
+          <input name="dinners" type="number" min={1} max={7} required defaultValue={text("dinners", initial.dinners)} className={field} />
         </label>
         <label className={label}>
           Adultes
-          <input name="adults" type="number" min={1} required defaultValue={initial.adults} className={field} />
+          <input name="adults" type="number" min={1} required defaultValue={text("adults", initial.adults)} className={field} />
         </label>
         <label className={label}>
           Enfants
-          <input name="children" type="number" min={0} required defaultValue={initial.children} className={field} />
+          <input name="children" type="number" min={0} required defaultValue={text("children", initial.children)} className={field} />
         </label>
         <label className={label}>
           Budget (€)
@@ -33,7 +36,7 @@ export function BriefForm({ initial }: { initial: Brief }) {
             type="text"
             inputMode="decimal"
             required
-            defaultValue={String(initial.budgetEur).replace(".", ",")}
+            defaultValue={text("budgetEur", String(initial.budgetEur).replace(".", ","))}
             className={field}
           />
         </label>
@@ -43,14 +46,14 @@ export function BriefForm({ initial }: { initial: Brief }) {
         <div className="mt-2 flex flex-wrap gap-4">
           {DIET_FILTERS.map((f) => (
             <label key={f} className="flex items-center gap-2 text-sm">
-              <input type="checkbox" name="filters" value={f} defaultChecked={initial.filters.includes(f)} />
+              <input type="checkbox" name="filters" value={f} defaultChecked={sent ? (sent.filters ?? []).includes(f) : initial.filters.includes(f)} />
               {FILTER_UI_LABELS[f]}
             </label>
           ))}
         </div>
       </fieldset>
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" name="preferOrganic" defaultChecked={initial.preferOrganic} />
+        <input type="checkbox" name="preferOrganic" defaultChecked={sent ? sent.preferOrganic !== undefined : initial.preferOrganic} />
         Bio de préférence
       </label>
       <label className={label}>
@@ -59,7 +62,7 @@ export function BriefForm({ initial }: { initial: Brief }) {
           name="notes"
           rows={3}
           maxLength={1000}
-          defaultValue={initial.notes}
+          defaultValue={text("notes", initial.notes)}
           placeholder="Ex. : pas de poisson, un plat sans four, Léa n'aime pas les champignons"
           className={field}
         />

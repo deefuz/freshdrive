@@ -1,4 +1,4 @@
-import type { Recipe } from "../recipes/schema";
+import type { Ingredient, Recipe } from "../recipes/schema";
 import { normalizeText } from "../text";
 import type { QtyUnit } from "../types";
 
@@ -12,11 +12,16 @@ export interface IngredientNeed {
   pantryStaple: boolean;
 }
 
+/** Clé d'un ingrédient : même requête (casse et accents ignorés) et même unité = même besoin. */
+export function needKey(ing: Pick<Ingredient, "searchQuery" | "unit">): string {
+  return `${normalizeText(ing.searchQuery)}|${ing.unit}`;
+}
+
 export function aggregateNeeds(recipes: Recipe[]): IngredientNeed[] {
   const byKey = new Map<string, IngredientNeed>();
   for (const recipe of recipes) {
     for (const ing of recipe.ingredients) {
-      const key = `${normalizeText(ing.searchQuery)}|${ing.unit}`;
+      const key = needKey(ing);
       const need =
         byKey.get(key) ??
         byKey

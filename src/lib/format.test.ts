@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { makeProduct, makeWeek } from "../../tests/helpers/factories";
-import { formatEur, formatQty, formatWeekDate, productLabel, weekStatusLabel } from "./format";
+import { formatEur, formatQty, formatWeekDate, productLabel, productShortLabel, weekStatusLabel } from "./format";
 
 describe("formatEur", () => {
   it("virgule décimale, arrondi au centime", () => {
@@ -64,5 +64,14 @@ describe("weekStatusLabel", () => {
       finishedAt: null,
     };
     expect(weekStatusLabel(week)).toBe("Envoi en cours");
+  });
+});
+
+describe("productShortLabel", () => {
+  it("marque, nom et conditionnement, sans prix", () => {
+    expect(productShortLabel(makeProduct({ brand: "AUCHAN BIO", name: "Courgettes", pack: { value: 1000, unit: "g" } }))).toBe(
+      "AUCHAN BIO Courgettes · 1000 g",
+    );
+    expect(productShortLabel(makeProduct({ name: "Citron", pack: null }))).toBe("Citron");
   });
 });

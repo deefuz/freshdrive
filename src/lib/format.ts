@@ -22,6 +22,12 @@ export function productLabel(p: Pick<Product, "brand" | "name" | "pack" | "price
   return parts.join(" · ");
 }
 
+/** Produit sans prix ni promo : « AUCHAN BIO Courgettes · 1000 g » (fiches recettes imprimées). */
+export function productShortLabel(p: Pick<Product, "brand" | "name" | "pack">): string {
+  const name = `${p.brand ? `${p.brand} ` : ""}${p.name}`;
+  return p.pack ? `${name} · ${formatQty(p.pack.value, p.pack.unit)}` : name;
+}
+
 const MONTHS = [
   "janvier",
   "février",

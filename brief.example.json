@@ -1,0 +1,9 @@
+{
+  "dinners": 4,
+  "adults": 2,
+  "children": 2,
+  "budgetEur": 60,
+  "filters": ["kids_friendly", "unprocessed"],
+  "notes": "",
+  "preferOrganic": true
+}

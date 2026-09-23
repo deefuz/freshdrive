@@ -40,6 +40,21 @@ describe("isWeekId", () => {
 });
 
 describe("WeekStore", () => {
+  it("remove déplace la semaine dans la corbeille (récupérable) et la retire de la liste", () => {
+    const store = new WeekStore(dir);
+    const a = store.create(brief, new Date(2026, 8, 23, 12));
+    const b = store.create(brief, new Date(2026, 8, 23, 13));
+    store.remove(a.id, new Date(2026, 8, 24, 9));
+    expect(store.list().map((w) => w.id)).toEqual([b.id]);
+    expect(store.get(a.id)).toBeNull();
+    const trashed = fs.readdirSync(path.join(dir, "corbeille"));
+    expect(trashed).toHaveLength(1);
+    expect(trashed[0]).toMatch(/^2026-09-23-1\.supprimee-.*\.json$/);
+    expect(JSON.parse(fs.readFileSync(path.join(dir, "corbeille", trashed[0]), "utf8")).id).toBe(a.id);
+    expect(() => store.remove(a.id)).toThrow(WeekNotFoundError);
+    expect(() => store.remove("../x")).toThrow(/invalide/);
+  });
+
   it("crée une semaine brouillon et la relit", () => {
     const store = new WeekStore(dir);
     const week = store.create(brief, new Date(2026, 8, 23, 12));

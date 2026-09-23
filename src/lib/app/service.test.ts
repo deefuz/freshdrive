@@ -216,6 +216,27 @@ describe("MyFreshApp", () => {
     expect(() => app.startAddRecipes(id)).toThrow(/au plus \d+ recettes/);
   });
 
+  it("deleteWeek met la semaine à la corbeille, refuse une semaine inconnue ou en cours de tâche", async () => {
+    const { gate, release } = blocker();
+    const backend = fakeBackend({
+      generateMenu: vi.fn(async () => recipes),
+      reviseRecipe: vi.fn<LlmBackend["reviseRecipe"]>(async (_b, _c, recipe) => {
+        await gate;
+        return recipe;
+      }),
+    });
+    const { app } = setup(backend);
+    const { id } = app.startCreateWeek(brief);
+    await app.runner.idle();
+    app.startReviseRecipe(id, "riz", "sans four");
+    expect(() => app.deleteWeek(id)).toThrow(/tâche est en cours/);
+    release();
+    await app.runner.idle();
+    app.deleteWeek(id);
+    expect(app.getWeek(id)).toBeNull();
+    expect(() => app.deleteWeek(id)).toThrow("Semaine introuvable.");
+  });
+
   it("edit est refusé pendant une tâche sur la même semaine", async () => {
     const { gate, release } = blocker();
     const backend = fakeBackend({

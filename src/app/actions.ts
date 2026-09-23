@@ -69,6 +69,13 @@ export async function addRecipesAction(weekId: string): Promise<ActionResult> {
   return attempt(() => getApp().startAddRecipes(String(weekId)));
 }
 
+/** Met la semaine à la corbeille ; depuis l'écran de la semaine, retour à l'accueil. */
+export async function deleteWeekAction(weekId: string, goHome: boolean): Promise<ActionResult> {
+  const result = await attempt(() => getApp().deleteWeek(String(weekId)));
+  if (!result.error && goHome === true) redirect("/");
+  return result;
+}
+
 export async function confirmPushAction(weekId: string): Promise<ActionResult> {
   return attempt(() => getApp().startPush(String(weekId)));
 }

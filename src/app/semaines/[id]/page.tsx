@@ -2,8 +2,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { ActionButton } from "@/app/_components/action-button";
+import { ConfirmActionButton } from "@/app/_components/confirm-action-button";
 import { JobProgress } from "@/app/_components/job-progress";
-import { addRecipesAction, retryCreateAction } from "@/app/actions";
+import { addRecipesAction, deleteWeekAction, retryCreateAction } from "@/app/actions";
 import { getApp } from "@/lib/app/instance";
 import { ADD_RECIPES_COUNT, MAX_WEEK_RECIPES } from "@/lib/app/service";
 import { formatWeekDate, JOB_LABELS } from "@/lib/format";
@@ -47,6 +48,12 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
             variant="primary"
           />
         </div>
+        <ConfirmActionButton
+          action={deleteWeekAction.bind(null, week.id, true)}
+          label="Supprimer cette semaine"
+          confirmLabel="Confirmer la suppression"
+          pendingLabel="Suppression…"
+        />
       </div>
     );
   }
@@ -127,6 +134,17 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
         )}
       </section>
       <ProductList weekId={week.id} rows={productRows(week)} />
+      <section className="border-t border-zinc-200 pt-4">
+        <ConfirmActionButton
+          action={deleteWeekAction.bind(null, week.id, true)}
+          label="Supprimer cette semaine"
+          confirmLabel="Confirmer la suppression"
+          pendingLabel="Suppression…"
+        />
+        <p className="mt-1 text-xs text-zinc-500">
+          La semaine est déplacée dans data/weeks/corbeille (récupérable). Ton panier Auchan n&apos;est pas modifié.
+        </p>
+      </section>
     </div>
   );
 }

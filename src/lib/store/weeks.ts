@@ -182,6 +182,15 @@ export class WeekStore {
     return week;
   }
 
+  /** Suppression récupérable : le fichier est déplacé dans <dossier>/corbeille. */
+  remove(id: string, now: Date = new Date()): void {
+    const file = this.fileFor(id);
+    if (!fs.existsSync(file)) throw new WeekNotFoundError(id);
+    const trash = path.join(this.dir, "corbeille");
+    fs.mkdirSync(trash, { recursive: true });
+    fs.renameSync(file, path.join(trash, `${id}.supprimee-${now.toISOString().replace(/[:.]/g, "-")}.json`));
+  }
+
   latestBrief(): Brief | null {
     return this.list()[0]?.brief ?? null;
   }

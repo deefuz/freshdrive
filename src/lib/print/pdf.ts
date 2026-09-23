@@ -46,7 +46,9 @@ export async function pdfResponse(request: Request, id: string, deps: PdfDeps): 
   const week = isWeekId(id) ? deps.getWeek(id) : null;
   if (!week) return text("Semaine introuvable.", 404);
   if (!isPrintable(week)) return text("Rien à imprimer : la semaine n'est pas prête ou aucune recette n'est retenue.", 409);
-  const options = parsePrintOptions(searchParamsRecord(new URL(request.url).searchParams));
+  const params = new URL(request.url).searchParams;
+  const disposition = params.get("affichage") === "1" ? "inline" : "attachment";
+  const options = parsePrintOptions(searchParamsRecord(params));
   if (!options.sections.length) return text("Choisis au moins une section à imprimer.", 400);
 
   const url = `${deps.baseUrl ?? LOCAL_APP_URL}/semaines/${week.id}/imprimer?${printQuery(options)}`;
@@ -59,7 +61,7 @@ export async function pdfResponse(request: Request, id: string, deps: PdfDeps): 
   return new Response(new Uint8Array(pdf), {
     headers: {
       "content-type": "application/pdf",
-      "content-disposition": `attachment; filename="myfresh-${week.id}.pdf"`,
+      "content-disposition": `${disposition}; filename="myfresh-${week.id}.pdf"`,
       "cache-control": "no-store",
     },
   });

@@ -212,6 +212,16 @@ export class MyFreshApp {
     this.runner.start(id, "add-recipes", (job) => runAddRecipes(id, count, this.workflowDeps(), job));
   }
 
+  /** Met la semaine à la corbeille (data/weeks/corbeille), sauf si une tâche tourne dessus. */
+  deleteWeek(id: string): void {
+    this.requireWeek(id);
+    const current = this.runner.current();
+    if (current?.status === "running" && current.weekId === id) {
+      throw new ActionError("Une tâche est en cours sur cette semaine : attends qu'elle se termine.");
+    }
+    this.store.remove(id, this.now());
+  }
+
   startPush(id: string): void {
     const week = this.requireWeek(id);
     if (week.status === "pushed") throw new ActionError("Cette semaine a déjà été envoyée au panier.");

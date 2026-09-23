@@ -17,6 +17,14 @@ const request = (query = "", headers: Record<string, string> = {}) =>
   new Request(`http://127.0.0.1:3141/semaines/2026-09-23-1/pdf${query}`, { headers });
 
 describe("pdfResponse", () => {
+  it("?affichage=1 : le PDF s'ouvre dans le navigateur au lieu d'être téléchargé (paramètre non transmis à la page)", async () => {
+    const { deps, render } = setup();
+    const res = await pdfResponse(request("?affichage=1"), "2026-09-23-1", deps);
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-disposition")).toBe('inline; filename="myfresh-2026-09-23-1.pdf"');
+    expect(render.mock.calls[0][0]).not.toContain("affichage");
+  });
+
   it("rend la page d'impression locale avec les options et renvoie le PDF en téléchargement", async () => {
     const { deps, render } = setup();
     const res = await pdfResponse(request("?famille=Martin&sections=courses&o=1&pirate=1"), "2026-09-23-1", deps);

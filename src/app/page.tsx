@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { ActionButton } from "@/app/_components/action-button";
-import { checkSessionAction, removeFavoriteAction } from "@/app/actions";
+import { ConfirmActionButton } from "@/app/_components/confirm-action-button";
+import { checkSessionAction, deleteWeekAction, removeFavoriteAction } from "@/app/actions";
 import { getApp } from "@/lib/app/instance";
 import { summarizeContext } from "@/lib/context/build";
 import { readCachedContext } from "@/lib/context/cache";
 import { formatDateTime, formatEur, formatWeekDate, JOB_LABELS, TAG_LABELS, weekStatusLabel } from "@/lib/format";
+import { isPrintable } from "@/lib/print/sheet";
 import { weekTotals } from "@/lib/week/edit";
 
 const card = "rounded-xl border border-zinc-200 bg-white p-4";
@@ -76,10 +78,10 @@ export default async function HomePage() {
               const titles = w.recipes.filter((r) => w.selectedRecipeIds.includes(r.id)).map((r) => r.title);
               const total = w.matches.length ? weekTotals(w).net : null;
               return (
-                <li key={w.id}>
+                <li key={w.id} className="hover:bg-zinc-50">
                   <Link
                     href={`/semaines/${w.id}`}
-                    className="flex flex-col gap-1 p-4 hover:bg-zinc-50 sm:flex-row sm:items-center sm:justify-between"
+                    className="flex flex-col gap-1 px-4 pt-4 pb-2 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div>
                       <p className="font-medium">Semaine du {formatWeekDate(w.id)}</p>
@@ -94,6 +96,24 @@ export default async function HomePage() {
                       {total !== null && ` · ${formatEur(total)}`}
                     </p>
                   </Link>
+                  <div className="flex flex-wrap items-center gap-3 px-4 pb-4">
+                    {isPrintable(w) && (
+                      <a
+                        href={`/semaines/${w.id}/pdf?affichage=1`}
+                        target="_blank"
+                        rel="noopener"
+                        className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-800 hover:bg-zinc-100"
+                      >
+                        Voir le PDF des recettes
+                      </a>
+                    )}
+                    <ConfirmActionButton
+                      action={deleteWeekAction.bind(null, w.id, false)}
+                      label="Supprimer"
+                      confirmLabel="Confirmer la suppression"
+                      pendingLabel="Suppression…"
+                    />
+                  </div>
                 </li>
               );
             })}

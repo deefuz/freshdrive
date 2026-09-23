@@ -113,13 +113,18 @@ Les illustrations des recettes sont des dessins SVG que Claude Code réalise à 
 | « Accès refusé : MyFresh ne répond qu'à … » | Ouvre l'app sur http://127.0.0.1:3141, pas via une autre adresse. |
 | Une tâche est déjà en cours | Une seule préparation ou un seul envoi à la fois : attends la fin (la page se met à jour toute seule). |
 
-## Pour bidouiller
-
-```bash
-npm test          # tests (Vitest)
-npm run lint      # ESLint
-```
+## Organisation du code
 
 - `src/app/` : l'interface (Next.js 16, React 19, Tailwind CSS 4).
 - `src/lib/` : la logique (connecteur Auchan, choix des produits, budget, promos, prompts Claude, stockage).
-- `PRODUCT.md` et `DESIGN.md` : à qui s'adresse l'app et son système visuel, à lire avant de toucher à l'interface.
+- `PRODUCT.md` et `DESIGN.md` : à qui s'adresse l'app et son système visuel.
+- `npm test` lance les tests (Vitest), `npm run lint` le linter.
+
+## Licence
+
+MyFresh est publié sous la [PolyForm Strict License 1.0.0](LICENSE). En résumé (seul le texte anglais du fichier `LICENSE` fait foi) :
+
+- **Autorisé :** installer et utiliser MyFresh pour toi, sans but commercial.
+- **Interdit :** modifier le code, le redistribuer (le copier ailleurs, le republier, le donner à quelqu'un), en tirer un autre projet, ou en faire un usage commercial.
+
+Pour tout autre usage, demande d'abord l'autorisation à l'auteur.

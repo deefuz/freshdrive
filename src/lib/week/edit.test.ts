@@ -45,6 +45,12 @@ describe("candidatesOf", () => {
     expect(candidatesOf(m).map((c) => c.product)).toEqual([tomates, tomatesBio]);
     expect(candidatesOf({ chosen: null, alternatives: m.alternatives }).map((c) => c.product)).toEqual([tomatesBio]);
   });
+
+  it("ignore les doublons d'un même produit (semaines enregistrées avant le dédoublonnage)", () => {
+    const [m] = week().matches;
+    const doubled = { chosen: m.chosen, alternatives: [...m.alternatives, m.chosen!, ...m.alternatives] };
+    expect(candidatesOf(doubled).map((c) => c.product)).toEqual([tomates, tomatesBio]);
+  });
 });
 
 describe("weekTotals", () => {

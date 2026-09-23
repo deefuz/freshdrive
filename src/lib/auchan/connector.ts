@@ -38,7 +38,8 @@ export class AuchanConnector implements StoreConnector {
     const key = q.toLowerCase();
     const cached = this.searchCache.get(key);
     if (cached) return cached;
-    const products = parseProductCards(await this.http.getText(`/recherche?text=${encodeURIComponent(q)}`));
+    // Auchan répète parfois un produit (emplacement sponsorisé puis liste) : on garde la première occurrence
+    const products = dedupe(parseProductCards(await this.http.getText(`/recherche?text=${encodeURIComponent(q)}`)));
     this.searchCache.set(key, products);
     return products;
   }

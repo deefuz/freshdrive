@@ -26,6 +26,14 @@ describe("AuchanConnector", () => {
     expect(http.getText).toHaveBeenCalledWith("/recherche?text=Tomates");
   });
 
+  it("dédoublonne les résultats de recherche (produit répété en emplacement sponsorisé)", async () => {
+    const html = fx("search.html");
+    const doubled = html.replace("</body>", `${html.match(/<article[\s\S]*?<\/article>/)![0]}</body>`);
+    const http = fakeHttp({ getText: vi.fn(async () => doubled) });
+    const products = await new AuchanConnector(http, { consentId: "c" }).searchProducts("tomates");
+    expect(products.map((p) => p.productId)).toEqual(["p-bio-cerise", "p-mutti", "p-grappe"]);
+  });
+
   it("construit le contexte magasin sans doublons", async () => {
     const http = fakeHttp();
     const ctx = await new AuchanConnector(http, { consentId: "c" }).getStoreContext();

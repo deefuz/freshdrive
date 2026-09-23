@@ -15,7 +15,10 @@ export class EditError extends Error {
 
 /** Candidats d'une correspondance : le produit choisi (s'il y en a un) puis les alternatives. */
 export function candidatesOf(match: Pick<IngredientMatch, "chosen" | "alternatives">): MatchCandidate[] {
-  return [...(match.chosen ? [match.chosen] : []), ...match.alternatives];
+  const seen = new Set<string>();
+  return [...(match.chosen ? [match.chosen] : []), ...match.alternatives].filter((c) =>
+    seen.has(c.product.productId) ? false : (seen.add(c.product.productId), true),
+  );
 }
 
 /** Correspondances avec les produits choisis par l'utilisateur à la place des produits proposés. */

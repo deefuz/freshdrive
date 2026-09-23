@@ -1,0 +1,14 @@
+{
+  "cart": {
+    "cart": {
+      "id": "cart-1",
+      "items": [
+        { "productId": "p-a", "offerId": "o-a", "desiredQuantity": 1 },
+        { "productId": "p-b", "offerId": "o-b", "desiredQuantity": 2 }
+      ],
+      "prices": { "totalPrice": { "amount": 391, "currency": "EUR" } }
+    }
+  },
+  "itemsSortedByMostRecent": [],
+  "revisedItems": []
+}

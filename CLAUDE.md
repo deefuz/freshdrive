@@ -3,7 +3,7 @@
 # MyFresh : recettes générées dans Claude Code (sans clé API)
 
 Déroulé d'une semaine sans clé API :
-1. L'utilisateur lance `npm run week -- --prepare`, ce qui écrit `data/requests/<date>.md`.
+1. L'utilisateur lance `npm run week -- --prepare`, ce qui écrit `data/requests/<date>.md`. La session Auchan est reprise automatiquement du Chrome habituel (cookies auchan.fr) ; si Auchan ne voit aucun drive, il faut se connecter sur auchan.fr dans Chrome.
 2. Quand il demande « génère les recettes de data/requests/<date>.md » :
    - lire ce fichier en entier et suivre ses consignes (rôle, contexte Auchan, contraintes, nombre de recettes) ;
    - écrire `data/recipes/<date>.json` au format `{ "recipes": [...] }`, conforme au schéma JSON du fichier. Ce schéma est vérifié par `parseRecipesFile` (`src/lib/recipes/handoff.ts`) ;

@@ -22,7 +22,6 @@ colors:
   honey-wash: "#fff3d6"
   blueberry: "#1b5faa"
   beet: "#c2185b"
-  auchan: "#d6001c"
   claude: "#c96442"
 typography:
   display:
@@ -174,7 +173,7 @@ Un fond de nappe crème, de l'encre anthracite, et quelques couleurs de légumes
 - **Encre miel** (#7a4f00) sur **Voile miel** (#fff3d6): avertissements, quantité à vérifier, étapes « avec les enfants ».
 - **Betterave** (#c2185b): badge « PROMO » uniquement.
 - **Myrtille** (#1b5faa): badge d'information (« ENVOYÉE »), rare.
-- **Rouge Auchan** (#d6001c) et **Terre cuite Claude** (#c96442): uniquement le fond des pastilles-logos 40px des services (panneau d'état de l'accueil), icône blanc cassé dessus. Jamais ailleurs.
+- **Terre cuite Claude** (#c96442): uniquement le fond de la pastille-logo 40px de Claude (panneau d'état de l'accueil), icône blanc cassé dessus. Jamais ailleurs. La pastille Auchan montre le logo officiel (chargé depuis auchan.fr) sur blanc cassé.
 
 ### Graphiques
 - Dépenses par semaine : colonnes empilées de 24px max, **basilic** = payé, **citron** = économies promos, 2px d'écart entre segments, bout arrondi 4px ; trait anthracite 2px = budget. Légende toujours visible, info-bulle au survol et au focus, tableau équivalent sous le graphique (le citron n'atteint pas 3:1 sur le fond).

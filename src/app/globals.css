@@ -32,7 +32,6 @@
   --color-blueberry: #1b5faa;
 
   /* Couleurs des services tiers, réservées à leurs pastilles-logos */
-  --color-auchan: #d6001c;
   --color-claude: #c96442;
 
   --font-display: var(--font-bricolage), Verdana, sans-serif;

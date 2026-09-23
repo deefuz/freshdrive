@@ -1,16 +1,13 @@
-/** Pastilles-logos des services qu'utilise MyFresh (marques évocatrices, pas les logos officiels). */
+/** Pastilles-logos des services qu'utilise MyFresh. */
 
 const tile = "inline-flex size-10 shrink-0 items-center justify-center rounded-lg";
 
-/** Auchan Drive : panier blanc sur rouge Auchan */
+/** Auchan Drive : le logo officiel, chargé depuis auchan.fr (aucune copie dans le dépôt) */
 export function AuchanMark() {
   return (
-    <span className={`${tile} bg-auchan`} aria-hidden="true">
-      <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="#fffefa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M3 9h18l-1.8 9.2a2 2 0 0 1-2 1.6H6.8a2 2 0 0 1-2-1.6L3 9Z" fill="#fffefa" fillOpacity=".18" />
-        <path d="M8 9 11 4M16 9l-3-5" />
-        <path d="M9 13v3M12 13v3M15 13v3" />
-      </svg>
+    <span className={`${tile} border border-oat-line bg-paper`} aria-hidden="true">
+      {/* eslint-disable-next-line @next/next/no-img-element -- image distante d'auchan.fr, affichée telle quelle */}
+      <img src="https://www.auchan.fr/favicon.ico" alt="" width={26} height={26} referrerPolicy="no-referrer" />
     </span>
   );
 }

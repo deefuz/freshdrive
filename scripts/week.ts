@@ -5,6 +5,8 @@ import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
 import Anthropic from "@anthropic-ai/sdk";
+import { hasStoreSession } from "@/lib/auchan/check";
+import { importChromeSession } from "@/lib/auchan/chrome-cookies";
 import { AuchanConnector } from "@/lib/auchan/connector";
 import { AuchanHttp } from "@/lib/auchan/http";
 import { loadSession } from "@/lib/auchan/session";
@@ -79,8 +81,19 @@ async function main() {
   const withPantry = process.argv.includes("--with-pantry");
   const recipesFile = argValue("--from-recipes");
   const today = new Date().toISOString().slice(0, 10);
+  if (!process.argv.includes("--no-chrome")) {
+    try {
+      const { cookies } = importChromeSession();
+      console.log(`Session Auchan reprise de Chrome (${cookies} cookies)`);
+    } catch (e) {
+      console.log(`⚠ Import depuis Chrome impossible (${(e as Error).message}) : session enregistrée utilisée.`);
+    }
+  }
   const session = loadSession();
   const connector = new AuchanConnector(new AuchanHttp(session), session);
+  if (!(await hasStoreSession(connector))) {
+    throw new Error("Auchan ne voit aucun drive : dans Chrome, connecte-toi sur auchan.fr et choisis ton drive, puis relance.");
+  }
 
   step("Contexte de la semaine");
   const ctx = await loadContext(connector);

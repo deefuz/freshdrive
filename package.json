@@ -11,7 +11,8 @@
     "test:watch": "vitest",
     "auchan:login": "tsx scripts/auchan-login.ts",
     "auchan:smoke": "tsx scripts/auchan-smoke.ts",
-    "week": "tsx scripts/week.ts"
+    "week": "tsx scripts/week.ts",
+    "auchan:import-chrome": "tsx scripts/auchan-import-chrome.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",

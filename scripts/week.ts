@@ -16,6 +16,7 @@ import { aggregateNeeds } from "@/lib/matching/needs";
 import { fetchOffInfo } from "@/lib/matching/off";
 import { type Brief, BriefSchema } from "@/lib/recipes/brief";
 import { generateMenu, reviseMenu } from "@/lib/recipes/generate";
+import { buildRequestDocument, parseRecipesFile } from "@/lib/recipes/handoff";
 import type { Recipe } from "@/lib/recipes/schema";
 
 const CONTEXT_CACHE = "data/cache/context.json";
@@ -76,23 +77,44 @@ function printBasket(basket: Basket, budget: number) {
 async function main() {
   const brief = loadBrief(argValue("--brief") ?? "data/brief.json");
   const withPantry = process.argv.includes("--with-pantry");
+  const recipesFile = argValue("--from-recipes");
+  const today = new Date().toISOString().slice(0, 10);
   const session = loadSession();
   const connector = new AuchanConnector(new AuchanHttp(session), session);
-  const client = new Anthropic();
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  const ask = async (q: string) => (await rl.question(`${q} (o/N) `)).trim().toLowerCase() === "o";
 
   step("Contexte de la semaine");
   const ctx = await loadContext(connector);
   console.log(summarizeContext(ctx));
 
-  step("Génération des recettes (Claude)");
-  let recipes = await generateMenu(client, brief, ctx);
+  if (process.argv.includes("--prepare")) {
+    const requestFile = `data/requests/${today}.md`;
+    const outputFile = `data/recipes/${today}.json`;
+    fs.mkdirSync(path.dirname(requestFile), { recursive: true });
+    fs.writeFileSync(requestFile, buildRequestDocument(brief, ctx, outputFile));
+    console.log(`\nDemande écrite : ${requestFile}`);
+    console.log(`Dans Claude Code, dis : « génère les recettes de ${requestFile} »`);
+    console.log(`Puis lance : npm run week -- --from-recipes ${outputFile}`);
+    return;
+  }
+
+  // Mode Claude Code (--from-recipes) : aucun appel à l'API Anthropic.
+  const client = recipesFile ? null : new Anthropic();
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  const ask = async (q: string) => (await rl.question(`${q} (o/N) `)).trim().toLowerCase() === "o";
+
+  let recipes: Recipe[];
+  if (recipesFile) {
+    step(`Recettes lues depuis ${recipesFile}`);
+    recipes = parseRecipesFile(fs.readFileSync(recipesFile, "utf8"));
+  } else {
+    step("Génération des recettes (Claude)");
+    recipes = await generateMenu(client!, brief, ctx);
+  }
 
   const scoreOpts = { preferOrganic: brief.preferOrganic, unprocessed: brief.filters.includes("unprocessed") };
   const deps = {
     connector,
-    arbiter: createClaudeArbiter(client),
+    arbiter: client ? createClaudeArbiter(client) : undefined,
     novaLookup: async (p: { url: string }) => {
       const { ean } = await connector.getProductDetails(p.url);
       return ean ? (await fetchOffInfo(ean)).nova : null;
@@ -114,7 +136,9 @@ async function main() {
   printMenu(recipes, selected);
   printBasket(basket, brief.budgetEur);
 
-  if (basket.total > brief.budgetEur && (await ask("Demander à Claude des recettes moins chères ?"))) {
+  if (basket.total > brief.budgetEur && !client) {
+    console.log("⚠ Au-dessus du budget : demande à Claude Code des recettes moins chères, puis relance avec --from-recipes.");
+  } else if (client && basket.total > brief.budgetEur && (await ask("Demander à Claude des recettes moins chères ?"))) {
     const chosen = recipes.filter((r) => selected.includes(r.id)).map((r) => r.title);
     recipes = await reviseMenu(
       client,
@@ -129,7 +153,7 @@ async function main() {
     printBasket(basket, brief.budgetEur);
   }
 
-  const weekFile = `data/weeks/${new Date().toISOString().slice(0, 10)}.json`;
+  const weekFile = `data/weeks/${today}.json`;
   fs.mkdirSync(path.dirname(weekFile), { recursive: true });
   fs.writeFileSync(weekFile, JSON.stringify({ brief, context: summarizeContext(ctx), recipes, selected, matches, basket }, null, 2));
   console.log(`\nSemaine enregistrée : ${weekFile}`);

@@ -1,12 +1,10 @@
 "use client";
 
+import { btn } from "@/app/_components/ui";
+
 export function PrintButton() {
   return (
-    <button
-      type="button"
-      onClick={() => window.print()}
-      className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-zinc-100"
-    >
+    <button type="button" onClick={() => window.print()} className={btn.secondary}>
       Imprimer
     </button>
   );

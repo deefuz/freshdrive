@@ -8,6 +8,7 @@ import {
   toggleFavoriteAction,
   toggleRecipeAction,
 } from "@/app/actions";
+import { btn, chip, chipInput, field, fieldLabel } from "@/app/_components/ui";
 import type { ActionResult } from "@/lib/app/action-result";
 
 function useServerAction() {
@@ -23,7 +24,7 @@ function useServerAction() {
 
 function ErrorText({ error }: { error: string | null }) {
   return error ? (
-    <span role="alert" className="block text-xs text-red-700">
+    <span role="alert" className="block text-xs text-tomato">
       {error}
     </span>
   ) : null;
@@ -42,8 +43,8 @@ export function RecipeToggle({
 }) {
   const { pending, error, run } = useServerAction();
   return (
-    <label className="flex shrink-0 flex-col items-end gap-1 text-sm">
-      <span className="flex items-center gap-2">
+    <span className="flex shrink-0 flex-col items-end gap-1">
+      <label className={chip} title={disabled ? "Tous les dîners sont déjà choisis : retire d'abord une recette" : undefined}>
         <input
           type="checkbox"
           checked={selected}
@@ -52,12 +53,13 @@ export function RecipeToggle({
             const next = e.target.checked;
             run(() => toggleRecipeAction(weekId, recipeId, next));
           }}
-          className="h-5 w-5 accent-emerald-600"
+          className={chipInput}
         />
+        <span aria-hidden="true">{selected ? "✓" : "+"}</span>
         {selected ? "Retenue" : "Retenir"}
-      </span>
+      </label>
       <ErrorText error={error} />
-    </label>
+    </span>
   );
 }
 
@@ -83,7 +85,7 @@ export function ProductPicker({
           const productId = e.target.value;
           run(() => chooseProductAction(weekId, ingredientKey, productId));
         }}
-        className="w-full rounded-lg border border-zinc-300 bg-white px-2 py-1 text-sm"
+        className={`${field} text-sm`}
       >
         {value === "" && <option value="">Aucun produit retenu</option>}
         {options.map((o) => (
@@ -100,7 +102,7 @@ export function ProductPicker({
 export function PantryToggle({ weekId, ingredientKey, inPantry }: { weekId: string; ingredientKey: string; inPantry: boolean }) {
   const { pending, error, run } = useServerAction();
   return (
-    <label className="flex items-center gap-2 text-sm text-zinc-700">
+    <label className="flex min-h-10 cursor-pointer items-center gap-2 text-sm text-graphite">
       <input
         type="checkbox"
         checked={inPantry}
@@ -109,6 +111,7 @@ export function PantryToggle({ weekId, ingredientKey, inPantry }: { weekId: stri
           const next = e.target.checked;
           run(() => setPantryAction(weekId, ingredientKey, next));
         }}
+        className="size-4"
       />
       Déjà au placard
       <ErrorText error={error} />
@@ -122,8 +125,8 @@ export function ReviseRecipeForm({ weekId, recipeId }: { weekId: string; recipeI
     { error: null },
   );
   return (
-    <form action={formAction} className="space-y-2 border-t border-zinc-200 pt-3">
-      <label className="block font-medium">
+    <form action={formAction} className="space-y-2.5 border-t border-oat-line pt-4">
+      <label className={fieldLabel}>
         Modifier cette recette
         <textarea
           name="instruction"
@@ -132,22 +135,22 @@ export function ReviseRecipeForm({ weekId, recipeId }: { weekId: string; recipeI
           required
           defaultValue={state.values?.instruction?.[0] ?? ""}
           placeholder="Ex. : moins épicé, sans four, remplacer le poisson par du poulet"
-          className="mt-1 w-full rounded-lg border border-zinc-300 px-2 py-1 font-normal"
+          className={`${field} leading-normal`}
         />
       </label>
       {state.error && (
-        <p role="alert" className="text-red-700">
+        <p role="alert" className="text-tomato">
           {state.error}
         </p>
       )}
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-zinc-100 disabled:opacity-50"
+        className={btn.secondary}
       >
         {pending ? "Envoi…" : "Demander la modification"}
       </button>
-      <p className="text-xs text-zinc-500">Claude réécrit la recette, puis MyFresh recherche à nouveau ses produits.</p>
+      <p className="text-pebble">Claude réécrit la recette, puis MyFresh recherche à nouveau ses produits.</p>
     </form>
   );
 }
@@ -163,7 +166,7 @@ export function FavoriteToggle({ weekId, recipeId, favorite }: { weekId: string;
         title={favorite ? "Retirer des favoris" : "Ajouter aux favoris"}
         disabled={pending}
         onClick={() => run(() => toggleFavoriteAction(weekId, recipeId, !favorite))}
-        className={`text-xl leading-none disabled:opacity-50 ${favorite ? "text-amber-500" : "text-zinc-300 hover:text-amber-400"}`}
+        className={`-mt-2 -mr-2 inline-flex size-10 items-center justify-center rounded-full text-2xl leading-none transition-colors duration-150 hover:bg-oat disabled:opacity-50 ${favorite ? "text-basil" : "text-pebble hover:text-charcoal"}`}
       >
         {favorite ? "★" : "☆"}
       </button>

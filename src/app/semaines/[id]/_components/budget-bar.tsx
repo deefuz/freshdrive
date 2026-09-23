@@ -1,8 +1,7 @@
 import Link from "next/link";
+import { btn } from "@/app/_components/ui";
 import { formatEur } from "@/lib/format";
 import type { WeekTotals } from "@/lib/week/edit";
-
-const primary = "inline-block rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700";
 
 export function BudgetBar({
   weekId,
@@ -19,47 +18,63 @@ export function BudgetBar({
 }) {
   const pct = Math.min(100, Math.round((totals.net / totals.budget) * 100));
   return (
-    <section className="sticky top-0 z-10 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <p className="text-lg">
-          <span className={`font-semibold ${totals.overBudget ? "text-red-700" : "text-emerald-700"}`}>
-            {formatEur(totals.net)}
-          </span>{" "}
-          <span className="text-zinc-500">/ budget {formatEur(totals.budget)}</span>
-        </p>
-        <p className="text-sm text-zinc-600">
-          {totals.overBudget
-            ? `${formatEur(-totals.remaining)} au-dessus du budget`
-            : `Reste ${formatEur(totals.remaining)}`}
-        </p>
+    <section
+      aria-label="Budget de la semaine"
+      className="sticky top-0 z-10 rounded bg-oat px-5 py-4 shadow-card print:static"
+    >
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div className="min-w-56 flex-1">
+          <p className="flex flex-wrap items-baseline gap-x-2">
+            <span
+              className={`font-display text-3xl font-extrabold tracking-[-0.03em] tabular-nums ${totals.overBudget ? "text-tomato" : "text-basil"}`}
+            >
+              {formatEur(totals.net)}
+            </span>
+            <span className="text-graphite">sur {formatEur(totals.budget)}</span>
+            <span className={`ml-auto text-sm font-bold ${totals.overBudget ? "text-tomato" : "text-charcoal"}`}>
+              {totals.overBudget
+                ? `${formatEur(-totals.remaining)} au-dessus du budget`
+                : `Reste ${formatEur(totals.remaining)}`}
+            </span>
+          </p>
+          <div
+            className="mt-2 h-2.5 overflow-hidden rounded-full bg-paper"
+            role="meter"
+            aria-label="Part du budget utilisée"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={pct}
+          >
+            <div
+              className={`h-full origin-left rounded-full transition-transform duration-300 ease-out-quart ${totals.overBudget ? "bg-tomato" : "bg-lime"}`}
+              style={{ transform: `scaleX(${pct / 100})` }}
+            />
+          </div>
+        </div>
+        <div className="shrink-0">
+          {pushed ? (
+            <Link href={`/semaines/${weekId}/panier`} prefetch={false} className={btn.primary}>
+              Voir le rapport d&apos;envoi
+            </Link>
+          ) : selected === 0 ? (
+            <p className="max-w-60 text-sm text-graphite">Retiens au moins une recette pour préparer le panier.</p>
+          ) : (
+            <Link href={`/semaines/${weekId}/panier`} prefetch={false} className={btn.primary}>
+              Vérifier le panier ({selected}/{dinners} dîners) →
+            </Link>
+          )}
+        </div>
       </div>
-      <div className="mt-2 h-2 rounded bg-zinc-200">
-        <div
-          className={`h-2 rounded ${totals.overBudget ? "bg-red-600" : "bg-emerald-600"}`}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-600">
+      <p className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-sm text-graphite">
         <span>Prix en rayon : {formatEur(totals.gross)}</span>
-        {totals.promoSaved > 0 && <span className="text-emerald-700">Économies promos : {formatEur(totals.promoSaved)}</span>}
+        {totals.promoSaved > 0 && (
+          <span className="font-bold text-basil">Économies promos : {formatEur(totals.promoSaved)}</span>
+        )}
         {totals.loyalty > 0 && <span>Cagnotte Waaoh : {formatEur(totals.loyalty)}</span>}
         {totals.basket.missing.length > 0 && (
-          <span className="text-amber-700">Introuvables : {totals.basket.missing.join(", ")}</span>
+          <span className="text-honey-ink">Introuvables : {totals.basket.missing.join(", ")}</span>
         )}
-      </div>
-      <div className="mt-3">
-        {pushed ? (
-          <Link href={`/semaines/${weekId}/panier`} prefetch={false} className={primary}>
-            Voir le rapport d&apos;envoi
-          </Link>
-        ) : selected === 0 ? (
-          <p className="text-sm text-zinc-500">Retiens au moins une recette pour préparer le panier.</p>
-        ) : (
-          <Link href={`/semaines/${weekId}/panier`} prefetch={false} className={primary}>
-            Vérifier le panier ({selected}/{dinners} dîners) →
-          </Link>
-        )}
-      </div>
+      </p>
     </section>
   );
 }

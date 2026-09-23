@@ -2,34 +2,34 @@
 
 import { useActionState } from "react";
 import type { ActionResult } from "@/lib/app/action-result";
+import { btn } from "./ui";
 
 export function ActionButton({
   action,
   label,
   pendingLabel,
   variant = "secondary",
+  className,
 }: {
   action: () => Promise<ActionResult>;
   label: string;
   pendingLabel: string;
   variant?: "primary" | "secondary";
+  /** marge ou placement du formulaire dans son conteneur */
+  className?: string;
 }) {
   const [state, formAction, pending] = useActionState<ActionResult>(() => action(), { error: null });
-  const style =
-    variant === "primary"
-      ? "bg-emerald-600 text-white hover:bg-emerald-700"
-      : "border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-100";
   return (
-    <form action={formAction} className="mt-2">
+    <form action={formAction} className={className}>
       <button
         type="submit"
         disabled={pending}
-        className={`rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${style}`}
+        className={variant === "primary" ? btn.primary : btn.secondary}
       >
         {pending ? pendingLabel : label}
       </button>
       {state.error && (
-        <p role="alert" className="mt-1 text-sm text-red-700">
+        <p role="alert" className="mt-1.5 text-sm text-tomato">
           {state.error}
         </p>
       )}

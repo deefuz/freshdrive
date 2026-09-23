@@ -1,18 +1,19 @@
+import { btn, card, notice } from "@/app/_components/ui";
 import { formatDateTime, formatEur } from "@/lib/format";
 import type { PushReport } from "@/lib/store/weeks";
 
 export function PushReportView({ report }: { report: PushReport }) {
   return (
-    <div className="space-y-4">
-      <p className="rounded-lg bg-emerald-50 p-3 text-emerald-900">
+    <div className="space-y-6">
+      <p className={`${notice.success} text-base`}>
         Envoyé le {formatDateTime(report.pushedAt)} : {report.added.length} produit(s) ajouté(s),{" "}
         {report.adjusted.length} ajusté(s) par Auchan, {report.failed.length} en échec. Total du panier Auchan :{" "}
         {report.cartTotal !== null ? formatEur(report.cartTotal) : "total inconnu"}.
       </p>
       {report.adjusted.length > 0 && (
-        <section>
-          <h2 className="font-semibold">Ajustés par Auchan (stock)</h2>
-          <ul className="list-disc pl-5 text-sm">
+        <section className={`${card} p-5`}>
+          <h2 className="font-sans text-base font-bold tracking-normal">Ajustés par Auchan (stock)</h2>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
             {report.adjusted.map((l) => (
               <li key={l.productId}>
                 {l.name} :{" "}
@@ -23,13 +24,13 @@ export function PushReportView({ report }: { report: PushReport }) {
         </section>
       )}
       {report.failed.length > 0 && (
-        <section>
-          <h2 className="font-semibold text-red-800">En échec : à ajouter à la main</h2>
-          <ul className="list-disc pl-5 text-sm">
+        <section className="rounded bg-tomato-wash p-5 text-tomato">
+          <h2 className="font-sans text-base font-bold tracking-normal">En échec : à ajouter à la main</h2>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
             {report.failed.map((l) => (
               <li key={l.productId}>
                 {l.url ? (
-                  <a href={l.url} target="_blank" rel="noreferrer" className="text-emerald-700 underline">
+                  <a href={l.url} target="_blank" rel="noreferrer" className="font-medium underline decoration-1 underline-offset-2">
                     {l.name}
                   </a>
                 ) : (
@@ -42,9 +43,9 @@ export function PushReportView({ report }: { report: PushReport }) {
         </section>
       )}
       {report.added.length > 0 && (
-        <details>
-          <summary className="cursor-pointer font-semibold">Produits ajoutés ({report.added.length})</summary>
-          <ul className="mt-2 list-disc pl-5 text-sm">
+        <details className={`${card} px-5 py-4`}>
+          <summary className="font-bold">Produits ajoutés ({report.added.length})</summary>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
             {report.added.map((l) => (
               <li key={l.productId}>
                 {l.name} : {l.actual} dans le panier
@@ -53,17 +54,14 @@ export function PushReportView({ report }: { report: PushReport }) {
           </ul>
         </details>
       )}
-      <a
-        href="https://www.auchan.fr"
-        target="_blank"
-        rel="noreferrer"
-        className="inline-block rounded-lg bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700"
-      >
-        Finaliser ma commande sur auchan.fr
-      </a>
-      <p className="text-sm text-zinc-500">
-        MyFresh ne passe jamais commande : choisis ton créneau et paie sur le site Auchan.
-      </p>
+      <div className="space-y-2">
+        <a href="https://www.auchan.fr" target="_blank" rel="noreferrer" className={btn.primary}>
+          Finaliser ma commande sur auchan.fr
+        </a>
+        <p className="text-sm text-pebble">
+          MyFresh ne passe jamais commande : choisis ton créneau et paie sur le site Auchan.
+        </p>
+      </div>
     </div>
   );
 }

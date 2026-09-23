@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, Roboto } from "next/font/google";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { Logo } from "./_components/logo";
+import { btn } from "./_components/ui";
 import "./globals.css";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const bricolage = Bricolage_Grotesque({ variable: "--font-bricolage", subsets: ["latin"], weight: ["700", "800"] });
+const roboto = Roboto({ variable: "--font-roboto", subsets: ["latin"], weight: ["400", "500", "700"] });
 
 export const metadata: Metadata = {
   title: "MyFresh",
@@ -14,22 +16,24 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="fr" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col bg-zinc-50 text-zinc-900 print:bg-white">
-        <header className="border-b border-zinc-200 bg-white print:hidden">
-          <nav className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-            <Link href="/" className="text-lg font-semibold text-emerald-700">
-              MyFresh
-            </Link>
-            <Link
-              href="/semaines/nouvelle"
-              className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
-            >
+    <html lang="fr" className={`${bricolage.variable} ${roboto.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">
+        <header className="print:hidden">
+          <nav className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
+            <div className="flex items-center gap-8">
+              <Link href="/" aria-label="MyFresh, accueil" className="rounded">
+                <Logo />
+              </Link>
+              <Link href="/" className="hidden text-[0.9375rem] font-medium hover:underline sm:inline">
+                Mes semaines
+              </Link>
+            </div>
+            <Link href="/semaines/nouvelle" className={btn.secondary}>
               Nouvelle semaine
             </Link>
           </nav>
         </header>
-        <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 print:max-w-none print:p-0">{children}</main>
+        <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-6 pb-16 print:max-w-none print:p-0">{children}</main>
       </body>
     </html>
   );

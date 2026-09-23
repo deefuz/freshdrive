@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import type { ActionResult } from "@/lib/app/action-result";
+import { btn } from "./ui";
 
 /** Bouton d'action destructive : un premier clic demande confirmation, le second exécute. */
 export function ConfirmActionButton({
@@ -24,7 +25,7 @@ export function ConfirmActionButton({
           <button
             type="submit"
             disabled={pending}
-            className="rounded-lg bg-red-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+            className={btn.dangerSolid}
           >
             {pending ? pendingLabel : confirmLabel}
           </button>
@@ -32,7 +33,7 @@ export function ConfirmActionButton({
             type="button"
             disabled={pending}
             onClick={() => setConfirming(false)}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-800 hover:bg-zinc-100"
+            className={btn.secondary}
           >
             Annuler
           </button>
@@ -41,13 +42,13 @@ export function ConfirmActionButton({
         <button
           type="button"
           onClick={() => setConfirming(true)}
-          className="rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+          className={btn.danger}
         >
           {label}
         </button>
       )}
       {state.error && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="text-sm text-tomato">
           {state.error}
         </p>
       )}

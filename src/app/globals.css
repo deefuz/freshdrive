@@ -1,12 +1,116 @@
 @import "tailwindcss";
 
-@theme inline {
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Thème MyFresh (voir DESIGN.md) : nappe crème, encre anthracite, couleurs de légumes au sens précis */
+@theme {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --color-charcoal: #232323;
+  --color-charcoal-hover: #3d3d3d;
+  --color-graphite: #4b4b4b;
+  --color-pebble: #6b6b6b;
+  --color-steel-line: #8a8a8a;
+
+  --color-cream: #faf8f3;
+  --color-paper: #fffefa;
+  --color-oat: #efe9de;
+  --color-oat-line: #e0d9cb;
+
+  --color-lime: #91c11e;
+  --color-lime-wash: #f6fde9;
+  --color-mint-wash: #f2fcf9;
+  --color-basil: #067a46;
+  --color-basil-deep: #055c35;
+
+  --color-tomato: #b3261e;
+  --color-tomato-hover: #8f1e18;
+  --color-tomato-wash: #fceeec;
+  --color-honey-ink: #7a4f00;
+  --color-honey-wash: #fff3d6;
+  --color-beet: #c2185b;
+  --color-blueberry: #1b5faa;
+
+  /* Couleurs des services tiers, réservées à leurs pastilles-logos */
+  --color-auchan: #d6001c;
+  --color-claude: #c96442;
+
+  --font-display: var(--font-bricolage), Verdana, sans-serif;
+  --font-sans: var(--font-roboto), system-ui, sans-serif;
+
+  --shadow-card: 0 1px 2px rgb(35 35 35 / 0.08), 0 1px 4px rgb(35 35 35 / 0.06);
+  --shadow-lift: 0 2px 6px rgb(35 35 35 / 0.1), 0 8px 24px rgb(35 35 35 / 0.08);
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
 }
 
-body {
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  body {
+    background: var(--color-cream);
+    color: var(--color-charcoal);
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2 {
+    font-family: var(--font-display);
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
+
+  :where(a, button, input, select, textarea, summary):focus-visible {
+    outline: 2px solid var(--color-charcoal);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-lime);
+    color: var(--color-charcoal);
+  }
+
+  input[type="checkbox"] {
+    accent-color: var(--color-charcoal);
+  }
+
+  button:not(:disabled),
+  summary {
+    cursor: pointer;
+  }
+}
+
+/* Tâche en cours sans avancement chiffré */
+@keyframes progress-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}
+
+.progress-indeterminate {
+  animation: progress-slide 1.6s var(--ease-out-quart) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-indeterminate {
+    animation: none;
+    width: 100%;
+    opacity: 0.5;
+  }
+
+
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Impression et PDF : A4, marges fixes, sans l'indicateur de développement de Next.js */
@@ -18,5 +122,9 @@ body {
 @media print {
   nextjs-portal {
     display: none;
+  }
+
+  body {
+    background: var(--color-paper);
   }
 }

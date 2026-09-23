@@ -1,3 +1,4 @@
+import { badge, card } from "@/app/_components/ui";
 import { formatQty, TAG_LABELS } from "@/lib/format";
 import type { Recipe } from "@/lib/recipes/schema";
 import { FavoriteToggle, RecipeToggle, ReviseRecipeForm } from "./week-controls";
@@ -23,59 +24,84 @@ export function RecipeCard({
   const n = recipe.nutritionPerServing;
   return (
     <article
-      className={`rounded-xl border bg-white p-4 ${selected ? "border-emerald-500 ring-1 ring-emerald-500" : "border-zinc-200"}`}
+      className={`${card} flex flex-col transition-shadow duration-200 ${selected ? "ring-3 ring-lime" : "hover:shadow-lift"}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="font-semibold">{recipe.title}</h3>
-          <p className="text-sm text-zinc-600">{recipe.summary}</p>
-        </div>
-        <div className="flex shrink-0 items-start gap-3">
+      <div className="flex flex-1 flex-col px-5 pt-4 pb-4">
+        <div className="flex min-h-6 items-start justify-between gap-3">
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {selected && <span className={`${badge} bg-lime text-charcoal`}>Retenue</span>}
+            {kids.size > 0 && <span className={`${badge} bg-honey-wash text-honey-ink`}>Avec les enfants</span>}
+          </div>
           <FavoriteToggle weekId={weekId} recipeId={recipe.id} favorite={favorite} />
-          <RecipeToggle weekId={weekId} recipeId={recipe.id} selected={selected} disabled={!selected && full} />
         </div>
-      </div>
-      <p className="mt-2 text-xs text-zinc-500">
-        {recipe.prepMinutes + recipe.cookMinutes} min · {recipe.servings} portions
-        {recipe.tags.length ? ` · ${recipe.tags.map((t) => TAG_LABELS[t]).join(", ")}` : ""}
-      </p>
-      {recipe.whyThisWeek && <p className="mt-2 text-sm text-emerald-800">{recipe.whyThisWeek}</p>}
-      <details className="mt-3">
-        <summary className="cursor-pointer text-sm font-medium text-zinc-700">Détail de la recette</summary>
-        <div className="mt-3 space-y-3 text-sm">
-          <div>
-            <h4 className="font-medium">Ingrédients</h4>
-            <ul className="list-disc pl-5">
-              {recipe.ingredients.map((i, index) => (
-                <li key={index}>
-                  {i.name} : {formatQty(i.quantity, i.unit)}
-                  {i.pantryStaple ? " (placard)" : ""}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <h4 className="font-medium">Étapes</h4>
-            <ol className="list-decimal space-y-1 pl-5">
-              {recipe.steps.map((s, index) => (
-                <li key={index} className={kids.has(index) ? "rounded bg-amber-50 px-1" : undefined}>
-                  {s}
-                  {kids.has(index) && (
-                    <span className="ml-2 rounded bg-amber-200 px-1.5 text-xs font-medium text-amber-900">
-                      Avec les enfants
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ol>
-          </div>
-          <p className="text-zinc-600">
-            Nutrition estimée par portion : {Math.round(n.kcal)} kcal · protéines {Math.round(n.proteinG)} g · glucides{" "}
-            {Math.round(n.carbsG)} g · lipides {Math.round(n.fatG)} g
+        <h3 className="mt-1 text-lg leading-snug font-medium">{recipe.title}</h3>
+        <p className="mt-1 text-sm text-graphite">{recipe.summary}</p>
+        {recipe.whyThisWeek && (
+          <p className="mt-3 rounded bg-lime-wash px-3 py-2 text-sm text-basil-deep">
+            <span className="font-bold">Cette semaine : </span>
+            {recipe.whyThisWeek}
           </p>
-          {!pushed && <ReviseRecipeForm weekId={weekId} recipeId={recipe.id} />}
-        </div>
-      </details>
+        )}
+        <details className="group mt-3">
+          <summary className="inline-flex list-none items-center gap-1.5 rounded text-sm font-bold underline decoration-1 underline-offset-2 [&::-webkit-details-marker]:hidden">
+            <span className="inline-block transition-transform duration-150 group-open:rotate-90" aria-hidden="true">
+              ›
+            </span>
+            Détail de la recette
+          </summary>
+          <div className="mt-4 space-y-4 text-sm">
+            <div>
+              <h4 className="font-bold">Ingrédients</h4>
+              <ul className="mt-1.5 space-y-1">
+                {recipe.ingredients.map((i, index) => (
+                  <li key={index} className="flex justify-between gap-3 border-b border-dotted border-oat-line pb-1">
+                    <span>
+                      {i.name}
+                      {i.pantryStaple && <span className="text-pebble"> (placard)</span>}
+                    </span>
+                    <span className="shrink-0 text-graphite tabular-nums">{formatQty(i.quantity, i.unit)}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-bold">Étapes</h4>
+              <ol className="mt-1.5 space-y-2">
+                {recipe.steps.map((s, index) => (
+                  <li
+                    key={index}
+                    className={`grid grid-cols-[1.5rem_1fr] gap-2 ${kids.has(index) ? "-mx-2 rounded bg-honey-wash px-2 py-1.5" : ""}`}
+                  >
+                    <span className="font-display font-extrabold tabular-nums">{index + 1}</span>
+                    <span>
+                      {s}
+                      {kids.has(index) && (
+                        <span className={`${badge} ml-2 bg-paper text-honey-ink`}>Avec les enfants</span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <p className="text-pebble">
+              Nutrition estimée par portion : {Math.round(n.kcal)} kcal · protéines {Math.round(n.proteinG)} g · glucides{" "}
+              {Math.round(n.carbsG)} g · lipides {Math.round(n.fatG)} g
+            </p>
+            {!pushed && <ReviseRecipeForm weekId={weekId} recipeId={recipe.id} />}
+          </div>
+        </details>
+      </div>
+      <footer className="flex items-center justify-between gap-3 border-t border-oat-line px-5 py-3">
+        <p className="text-sm text-graphite">
+          <span className="font-bold text-charcoal">{recipe.prepMinutes + recipe.cookMinutes} min</span>
+          <span className="mx-2 text-oat-line" aria-hidden="true">
+            |
+          </span>
+          {recipe.servings} portions
+          {recipe.tags.length ? ` • ${recipe.tags.map((t) => TAG_LABELS[t]).join(" • ")}` : ""}
+        </p>
+        <RecipeToggle weekId={weekId} recipeId={recipe.id} selected={selected} disabled={!selected && full} />
+      </footer>
     </article>
   );
 }

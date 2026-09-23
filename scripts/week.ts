@@ -9,6 +9,7 @@ import { previewPush } from "@/lib/cart/push";
 import { summarizeContext } from "@/lib/context/build";
 import { loadWeeklyContext } from "@/lib/context/cache";
 import type { JobContext } from "@/lib/jobs/runner";
+import { formatEur } from "@/lib/format";
 import { selectBackend } from "@/lib/llm/backend";
 import { type Brief, BriefSchema } from "@/lib/recipes/brief";
 import { buildRequestDocument, parseRecipesFile } from "@/lib/recipes/handoff";
@@ -47,16 +48,16 @@ function printWeek(week: Week): WeekTotals {
       ingrédient: `${l.name} (${l.quantityNeeded}${l.unit})`,
       produit: `${l.product.brand ? `${l.product.brand} ` : ""}${l.product.name}`,
       paquets: l.packs,
-      coût: l.cost,
+      coût: formatEur(l.cost),
       infos: [l.product.isOrganic && "bio", l.product.promo?.label, l.uncertainQuantity && "⚠ quantité à vérifier"]
         .filter(Boolean)
         .join(" · "),
     })),
   );
   if (totals.basket.missing.length) console.log(`Introuvables : ${totals.basket.missing.join(", ")}`);
-  const promo = totals.promoSaved ? ` (dont ${totals.promoSaved} € d'économies promo)` : "";
+  const promo = totals.promoSaved ? ` (dont ${formatEur(totals.promoSaved)} d'économies promo)` : "";
   const status = totals.overBudget ? "⚠ au-dessus du budget" : "✅";
-  console.log(`Total estimé : ${totals.net} € / budget ${totals.budget} €${promo} ${status}`);
+  console.log(`Total estimé : ${formatEur(totals.net)} / budget ${formatEur(totals.budget)}${promo} ${status}`);
   return totals;
 }
 
@@ -145,7 +146,7 @@ async function main() {
       const report = store.get(week.id)!.pushReport!;
       console.log();
       for (const a of report.adjusted) console.log(`⚠ ${a.name} : ${a.actual} au lieu de ${a.requested} (stock)`);
-      if (report.cartTotal !== null) console.log(`Panier : ${report.cartTotal} €`);
+      if (report.cartTotal !== null) console.log(`Panier : ${formatEur(report.cartTotal)}`);
       if (report.failed.length) console.log(`❌ Échecs : ${report.failed.map((f) => `${f.name} (${f.error})`).join(", ")}`);
       console.log("Finalise ta commande (créneau et paiement) sur https://www.auchan.fr");
     }

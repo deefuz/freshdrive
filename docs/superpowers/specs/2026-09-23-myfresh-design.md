@@ -18,7 +18,7 @@ Nouveau projet, parti d'un dossier vide.
 - SQLite + Drizzle : préférences, historique des menus, cache des produits et du contexte hebdo
 - Playwright (Chromium, profil persistant) : connexion Auchan et rendu PDF uniquement
 - cheerio : parsing du HTML Auchan (balises schema.org des produits)
-- SDK Anthropic `@anthropic-ai/sdk`, modèle `claude-opus-5` (génération : effort `high` ; arbitrage du matching : effort `low`), sorties structurées via `messages.parse` + `zodOutputFormat`
+- SDK Anthropic `@anthropic-ai/sdk`, modèle `claude-opus-5-5` (génération : effort `high` ; arbitrage du matching : effort `low`), sorties structurées via `messages.parse` + `zodOutputFormat`
 - Open Food Facts API (recherche par EAN) : NOVA et Nutri-Score quand Auchan ne les affiche pas
 - PDF : rendu HTML avec CSS print, puis `page.pdf()` de Playwright (on réutilise la dépendance)
 - Session Auchan : connexion **manuelle** dans une fenêtre Chromium ouverte par l'app (`npm run auchan:login`), puis sauvegarde du `storageState` Playwright dans `data/` (gitignoré). Aucun mot de passe stocké. Reconnexion automatique avec des identifiants dans le trousseau macOS : reportée, à évaluer une fois la durée de vie de la session connue.

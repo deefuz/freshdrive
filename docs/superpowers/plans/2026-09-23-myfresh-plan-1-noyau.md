@@ -15,7 +15,7 @@
 - L'app **ne passe jamais commande** : elle modifie uniquement le panier via `POST /cart/update`.
 - Débit maximum vers auchan.fr : **une requête toutes les 350 ms** (throttle global dans `AuchanHttp`).
 - Aucun mot de passe stocké. La session vient d'une connexion manuelle (`npm run auchan:login`) sauvegardée dans `data/auchan-state.json`. Le dossier `data/` est gitignoré.
-- Modèle Claude : `claude-opus-5` partout (génération : effort `high` ; arbitrage produits : effort `low`), avec `thinking: { type: "adaptive" }`.
+- Modèle Claude : `claude-opus-5-5` partout (génération : effort `high` ; arbitrage produits : effort `low`), avec `thinking: { type: "adaptive" }`.
 - `desiredQuantity` envoyé à Auchan est une **quantité absolue**. On additionne toujours la quantité déjà présente dans le panier.
 - Textes visibles par l'utilisateur en français. Identifiants de code en anglais.
 - Montants en euros (number, arrondis à 2 décimales). Les montants du panier Auchan sont en centimes : on divise par 100 à la lecture.
@@ -1678,7 +1678,7 @@ git commit -m "feat(context): saison, calendrier des événements FR et contexte
   - `DIET_FILTERS`, `type DietFilter`, `BriefSchema`, `type Brief = { dinners; adults; children; budgetEur; filters: DietFilter[]; notes: string; preferOrganic: boolean }`, `servingsFor(brief: Brief): number`
   - `IngredientSchema`, `RecipeSchema`, `MenuSchema`, `type Ingredient`, `type Recipe` (champs : `id, title, summary, servings, prepMinutes, cookMinutes, tags, ingredients[{name, searchQuery, quantity, unit, pantryStaple, fromPromo}], steps, nutritionPerServing{kcal, proteinG, carbsG, fatG}, whyThisWeek`)
   - `SYSTEM_PROMPT`, `buildMenuPrompt(brief, ctx): string`, `buildRevisePrompt(brief, ctx, recipes, instruction): string`
-  - `RECIPE_MODEL = "claude-opus-5"`, `class LlmError`, `unwrapParsed<T>(r): T`, `generateMenu(client: Anthropic, brief, ctx): Promise<Recipe[]>`, `reviseMenu(client, brief, ctx, recipes, instruction): Promise<Recipe[]>`
+  - `RECIPE_MODEL = "claude-opus-5-5"`, `class LlmError`, `unwrapParsed<T>(r): T`, `generateMenu(client: Anthropic, brief, ctx): Promise<Recipe[]>`, `reviseMenu(client, brief, ctx, recipes, instruction): Promise<Recipe[]>`
   - `makeRecipe(overrides?: Partial<Recipe>): Recipe` (tests)
 
 - [ ] **Step 1 : `src/lib/recipes/brief.ts`**
@@ -1946,7 +1946,7 @@ import type { Brief } from "./brief";
 import { buildMenuPrompt, buildRevisePrompt, SYSTEM_PROMPT } from "./prompt";
 import { MenuSchema, type Recipe } from "./schema";
 
-export const RECIPE_MODEL = "claude-opus-5";
+export const RECIPE_MODEL = "claude-opus-5-5";
 
 export class LlmError extends Error {
   constructor(message: string) {

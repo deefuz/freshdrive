@@ -1,0 +1,185 @@
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { fakeBackend } from "../../../tests/helpers/fake-backend";
+import { makeProduct, makeRecipe, makeWeek } from "../../../tests/helpers/factories";
+import { FakeConnector } from "../../../tests/helpers/fake-connector";
+import { NoStoreError } from "../auchan/open";
+import type { WeeklyContext } from "../context/build";
+import type { LlmBackend } from "../llm/backend";
+import type { Brief } from "../recipes/brief";
+import { WeekStore } from "../store/weeks";
+import { ActionError, type AppDeps, MyFreshApp } from "./service";
+
+const brief: Brief = { dinners: 1, adults: 2, children: 0, budgetEur: 30, filters: [], notes: "", preferOrganic: false };
+const ctx: WeeklyContext = {
+  generatedAt: "2026-09-23T08:00:00.000Z",
+  season: "automne",
+  seasonalProduce: [],
+  events: [],
+  promos: [],
+  antiGaspi: [],
+  themes: [],
+};
+const ing = (q: string, quantity: number) => ({
+  name: q,
+  searchQuery: q,
+  quantity,
+  unit: "g" as const,
+  pantryStaple: false,
+  fromPromo: false,
+});
+const recipes = [
+  makeRecipe({ id: "pates", ingredients: [ing("pates", 500)] }),
+  makeRecipe({ id: "riz", ingredients: [ing("riz", 500)] }),
+];
+
+function blocker() {
+  let release!: () => void;
+  const gate = new Promise<void>((r) => {
+    release = r;
+  });
+  return { gate, release };
+}
+
+let dir: string;
+beforeEach(() => {
+  dir = fs.mkdtempSync(path.join(os.tmpdir(), "myfresh-app-"));
+});
+afterEach(() => fs.rmSync(dir, { recursive: true, force: true }));
+
+function setup(backend: LlmBackend = fakeBackend({ generateMenu: vi.fn(async () => recipes) }), overrides: Partial<AppDeps> = {}) {
+  const connector = new FakeConnector({
+    pates: [makeProduct({ name: "Pâtes", price: 1, pack: { value: 500, unit: "g" } })],
+    riz: [makeProduct({ name: "Riz", price: 2, pack: { value: 500, unit: "g" } })],
+  });
+  const store = new WeekStore(dir);
+  const app = new MyFreshApp({
+    store,
+    backend: () => backend,
+    openAuchan: async () => ({ connector, source: "chrome", warnings: [] }),
+    loadContext: async () => ctx,
+    now: () => new Date("2026-09-23T10:00:00.000Z"),
+    ...overrides,
+  });
+  return { app, store, connector };
+}
+
+describe("MyFreshApp", () => {
+  it("startCreateWeek : crée la semaine, suit la tâche et enregistre l'état final", async () => {
+    const { app } = setup();
+    const week = app.startCreateWeek(brief);
+    expect(week.status).toBe("generating");
+    expect(week.job).toMatchObject({ kind: "create", status: "running" });
+    await app.runner.idle();
+    const done = app.getWeek(week.id)!;
+    expect(done).toMatchObject({ status: "ready", selectedRecipeIds: ["pates"] });
+    expect(done.job).toMatchObject({ status: "done", step: "Terminé" });
+    expect(app.session).toMatchObject({ ok: true, message: "Session reprise de Chrome, drive détecté." });
+  });
+
+  it("une seule tâche à la fois : la 2e demande échoue sans créer de semaine", async () => {
+    const { gate, release } = blocker();
+    const { app, store } = setup(
+      fakeBackend({
+        generateMenu: vi.fn(async () => {
+          await gate;
+          return recipes;
+        }),
+      }),
+    );
+    app.startCreateWeek(brief);
+    expect(() => app.startCreateWeek(brief)).toThrow(/déjà en cours/);
+    expect(store.list()).toHaveLength(1);
+    release();
+    await app.runner.idle();
+  });
+
+  it("startPush : envoie une fois, puis refuse un 2e envoi", async () => {
+    const { app, connector } = setup();
+    const { id } = app.startCreateWeek(brief);
+    await app.runner.idle();
+    app.startPush(id);
+    await app.runner.idle();
+    expect(app.getWeek(id)?.status).toBe("pushed");
+    expect(connector.cart.items).toHaveLength(1);
+    expect(() => app.startPush(id)).toThrow(/déjà été envoyée/);
+  });
+
+  it("startPush refuse un envoi déjà lancé mais interrompu (pushStartedAt sans statut pushed)", async () => {
+    const { app, store } = setup();
+    store.save(makeWeek({ status: "ready", pushStartedAt: "2026-09-23T09:00:00.000Z" }));
+    expect(() => app.startPush("2026-09-23-1")).toThrow(/déjà été lancé/);
+  });
+
+  it("getWeek : une tâche « en cours » inconnue du serveur (redémarrage) passe en erreur, et c'est enregistré", () => {
+    const { app, store } = setup();
+    store.save(
+      makeWeek({
+        status: "generating",
+        job: {
+          weekId: "2026-09-23-1",
+          kind: "create",
+          status: "running",
+          step: "Génération des recettes",
+          progress: null,
+          error: null,
+          startedAt: "2026-09-23T09:00:00.000Z",
+          finishedAt: null,
+        },
+      }),
+    );
+    const week = app.getWeek("2026-09-23-1")!;
+    expect(week.status).toBe("draft");
+    expect(week.job?.error).toMatch(/interrompue/);
+    expect(store.get("2026-09-23-1")?.status).toBe("draft");
+  });
+
+  it("retryCreateWeek relance une semaine en brouillon", async () => {
+    const { app, store } = setup();
+    store.save(makeWeek({ status: "draft", brief }));
+    app.retryCreateWeek("2026-09-23-1");
+    await app.runner.idle();
+    expect(app.getWeek("2026-09-23-1")?.status).toBe("ready");
+    expect(() => app.retryCreateWeek("2026-09-23-1")).toThrow(ActionError);
+  });
+
+  it("startReviseRecipe refuse une consigne vide ou une recette inconnue", async () => {
+    const { app } = setup();
+    const { id } = app.startCreateWeek(brief);
+    await app.runner.idle();
+    expect(() => app.startReviseRecipe(id, "pates", "   ")).toThrow(/Écris ce que tu veux changer/);
+    expect(() => app.startReviseRecipe(id, "zzz", "sans four")).toThrow(/Recette introuvable/);
+  });
+
+  it("edit est refusé pendant une tâche sur la même semaine", async () => {
+    const { gate, release } = blocker();
+    const backend = fakeBackend({
+      generateMenu: vi.fn(async () => recipes),
+      reviseRecipe: vi.fn<LlmBackend["reviseRecipe"]>(async (_b, _c, recipe) => {
+        await gate;
+        return recipe;
+      }),
+    });
+    const { app } = setup(backend);
+    const { id } = app.startCreateWeek(brief);
+    await app.runner.idle();
+    app.startReviseRecipe(id, "riz", "sans four");
+    expect(() => app.edit(id, (w) => w)).toThrow(/tâche est en cours/);
+    release();
+    await app.runner.idle();
+    expect(() => app.edit(id, (w) => w)).not.toThrow();
+  });
+
+  it("checkSession enregistre un échec avec son message", async () => {
+    const { app } = setup(undefined, {
+      openAuchan: async () => {
+        throw new NoStoreError();
+      },
+    });
+    const status = await app.checkSession();
+    expect(status.ok).toBe(false);
+    expect(status.message).toMatch(/aucun drive/);
+  });
+});

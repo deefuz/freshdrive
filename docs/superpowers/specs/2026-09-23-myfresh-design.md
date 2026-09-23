@@ -6,7 +6,7 @@ Le dossier `/Users/deefuz/Local Sites/PERSO/hellofresh` est vide : c'est un nouv
 
 ## Décisions validées
 - **Usage** : personnel/familial, en local sur le Mac. Pas de multi-utilisateurs.
-- **Connecteur** : navigateur automatisé Playwright. Les identifiants sont stockés dans le trousseau macOS. L'app **remplit le panier sans jamais passer commande** : le paiement se fait sur le site Auchan.
+- **Connecteur** : client HTTP (fetch avec les cookies de session, parsing avec cheerio) ; Playwright uniquement pour la connexion et le rafraîchissement des cookies (voir `2026-09-23-auchan-spike-findings.md`). Les identifiants sont stockés dans le trousseau macOS. L'app **remplit le panier sans jamais passer commande** : le paiement se fait sur le site Auchan.
 - **Recettes** : générées par Claude chaque semaine à partir du contexte Auchan. Aucune liste fixe.
 - **Interface** : web app Next.js locale (localhost, accessible depuis le téléphone via le wifi).
 - **Rythme** : un menu par semaine (N dîners × M personnes, dont des enfants), un seul panier.
@@ -16,7 +16,8 @@ Le dossier `/Users/deefuz/Local Sites/PERSO/hellofresh` est vide : c'est un nouv
 ## Stack
 - Next.js (App Router) + TypeScript, Tailwind
 - SQLite + Drizzle : préférences, historique des menus, cache des produits et du contexte hebdo
-- Playwright (Chromium, profil persistant pour garder la session Auchan)
+- Playwright (Chromium, profil persistant) : connexion Auchan et rendu PDF uniquement
+- cheerio : parsing du HTML Auchan (balises schema.org des produits)
 - SDK Anthropic (`claude-opus-5-5` pour la génération, `claude-haiku-4-5` pour le matching produit), sorties structurées via tool use et schémas Zod
 - Open Food Facts API (recherche par EAN) : NOVA et Nutri-Score quand Auchan ne les affiche pas
 - PDF : rendu HTML avec CSS print, puis `page.pdf()` de Playwright (on réutilise la dépendance)
@@ -25,11 +26,11 @@ Le dossier `/Users/deefuz/Local Sites/PERSO/hellofresh` est vide : c'est un nouv
 ## Architecture (modules isolés)
 ```
 src/
-  auchan/        # connecteur : seule partie qui touche au DOM Auchan
-    session.ts   # login, choix du magasin drive, profil persistant
+  auchan/        # connecteur : seule partie qui parle à auchan.fr (client HTTP)
+    session.ts   # login Playwright -> cookies, cartId, sellerId, consentId
     catalog.ts   # searchProducts(query) -> Product[] (prix, prix/kg, EAN, bio, nutriscore, promo)
     context.ts   # getWeeklyContext() -> promos, mises en avant, rayons saison
-    cart.ts      # addToCart(items) -> {added, failed}
+    cart.ts      # addToCart(items) via POST /cart/update (quantité absolue) -> {added, failed, revised}
   context/       # WeeklyContext = contexte Auchan + date/saison + calendrier des événements FR (Chandeleur, Halloween, Noël…)
   recipes/       # generateMenu(prefs, context) et reviseRecipe(recipe, instruction) via Claude, validés par Zod
   matching/      # ingrédient -> produit Auchan : scoring (prix/kg, bio, NOVA/nutriscore, taille du paquet vs quantité, promo, mutualisation)
@@ -49,7 +50,7 @@ Le type `Product` et les interfaces du connecteur sont définis dès le départ.
 7. **PDF** : une fiche par recette (ingrédients, quantités, produit Auchan correspondant, étapes, temps, estimation nutritionnelle, badges kids/vegan) et une liste de courses récapitulative. Personnalisable : nom de la famille, portions, notes, choix des sections à imprimer.
 
 ## Ordre de réalisation
-0. **Test de faisabilité du connecteur** (code jetable) : login, choix du magasin, recherche, lecture des promos, ajout au panier. Il faut vérifier la présence d'un anti-bot (Datadome ou autre) et les appels XHR internes, qu'il vaudrait mieux utiliser que le DOM s'ils existent. **On décide de la suite en fonction du résultat.**
+0. ~~Test de faisabilité du connecteur~~ : **fait, concluant** (voir `2026-09-23-auchan-spike-findings.md`).
 1. Scaffold, types, faux connecteur, base SQLite
 2. Contexte, génération des recettes, écran de brief
 3. Matching et budget, écran de validation

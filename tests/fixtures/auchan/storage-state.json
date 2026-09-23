@@ -1,0 +1,9 @@
+{
+  "cookies": [
+    { "name": "lark-consentId", "value": "consent-123", "domain": ".auchan.fr", "path": "/", "expires": -1, "httpOnly": false, "secure": false, "sameSite": "Lax" },
+    { "name": "sid", "value": "abc", "domain": "www.auchan.fr", "path": "/", "expires": 9999999999, "httpOnly": true, "secure": true, "sameSite": "Lax" },
+    { "name": "old", "value": "x", "domain": ".auchan.fr", "path": "/", "expires": 1, "httpOnly": false, "secure": false, "sameSite": "Lax" },
+    { "name": "_ga", "value": "y", "domain": ".google.com", "path": "/", "expires": -1, "httpOnly": false, "secure": false, "sameSite": "Lax" }
+  ],
+  "origins": []
+}

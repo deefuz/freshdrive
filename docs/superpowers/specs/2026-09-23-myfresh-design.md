@@ -6,7 +6,7 @@ Nouveau projet, parti d'un dossier vide.
 
 ## Décisions validées
 - **Usage** : personnel/familial, en local sur le Mac. Pas de multi-utilisateurs.
-- **Connecteur** : client HTTP (fetch avec les cookies de session, parsing avec cheerio) ; Playwright uniquement pour la connexion et le rafraîchissement des cookies (voir `2026-09-23-auchan-spike-findings.md`). Les identifiants sont stockés dans le trousseau macOS. L'app **remplit le panier sans jamais passer commande** : le paiement se fait sur le site Auchan.
+- **Connecteur** : client HTTP (fetch avec les cookies de session, parsing avec cheerio) ; Playwright uniquement pour la connexion et le rafraîchissement des cookies (voir `2026-09-23-auchan-spike-findings.md`). Connexion manuelle une fois, session conservée. L'app **remplit le panier sans jamais passer commande** : le paiement se fait sur le site Auchan.
 - **Recettes** : générées par Claude chaque semaine à partir du contexte Auchan. Aucune liste fixe.
 - **Interface** : web app Next.js locale (localhost, accessible depuis le téléphone via le wifi).
 - **Rythme** : un menu par semaine (N dîners × M personnes, dont des enfants), un seul panier.
@@ -18,16 +18,17 @@ Nouveau projet, parti d'un dossier vide.
 - SQLite + Drizzle : préférences, historique des menus, cache des produits et du contexte hebdo
 - Playwright (Chromium, profil persistant) : connexion Auchan et rendu PDF uniquement
 - cheerio : parsing du HTML Auchan (balises schema.org des produits)
-- SDK Anthropic (`claude-opus-5-5` pour la génération, `claude-haiku-4-5` pour le matching produit), sorties structurées via tool use et schémas Zod
+- SDK Anthropic `@anthropic-ai/sdk`, modèle `claude-opus-5` (génération : effort `high` ; arbitrage du matching : effort `low`), sorties structurées via `messages.parse` + `zodOutputFormat`
 - Open Food Facts API (recherche par EAN) : NOVA et Nutri-Score quand Auchan ne les affiche pas
 - PDF : rendu HTML avec CSS print, puis `page.pdf()` de Playwright (on réutilise la dépendance)
-- `keytar` (trousseau macOS) pour les identifiants Auchan et la clé API
+- Session Auchan : connexion **manuelle** dans une fenêtre Chromium ouverte par l'app (`npm run auchan:login`), puis sauvegarde du `storageState` Playwright dans `data/` (gitignoré). Aucun mot de passe stocké. Reconnexion automatique avec des identifiants dans le trousseau macOS : reportée, à évaluer une fois la durée de vie de la session connue.
+- Clé API : `ANTHROPIC_API_KEY` dans `.env.local` (gitignoré)
 
 ## Architecture (modules isolés)
 ```
 src/
   auchan/        # connecteur : seule partie qui parle à auchan.fr (client HTTP)
-    session.ts   # login Playwright -> cookies, cartId, sellerId, consentId
+    session.ts   # storageState Playwright -> cookies, sellerId (data-seller-id), consentId (cookie lark-consentId)
     catalog.ts   # searchProducts(query) -> Product[] (prix, prix/kg, EAN, bio, nutriscore, promo)
     context.ts   # getWeeklyContext() -> promos, mises en avant, rayons saison
     cart.ts      # addToCart(items) via POST /cart/update (quantité absolue) -> {added, failed, revised}
@@ -58,7 +59,10 @@ Le type `Product` et les interfaces du connecteur sont définis dès le départ.
 5. Export PDF
 6. Finitions : historique, pas deux fois le même plat, plats favoris
 
-Prochaine étape : plan d'implémentation détaillé (skill writing-plans).
+Découpage en 3 plans d'implémentation :
+- **Plan 1 : noyau** (connecteur Auchan, contexte, recettes, matching, budget, commande CLI `npm run week`) → `docs/superpowers/plans/2026-09-23-myfresh-plan-1-noyau.md`
+- **Plan 2 : web app et panier** (écrans brief/validation/panier, SQLite pour préférences et historique)
+- **Plan 3 : PDF et finitions** (export PDF, favoris, anti-doublons)
 
 ## Risques
 - Anti-bot ou changements du site Auchan : le connecteur est isolé et on utilise des sélecteurs robustes. En cas de captcha, on bascule en mode « headed » pour que l'utilisateur le résolve.

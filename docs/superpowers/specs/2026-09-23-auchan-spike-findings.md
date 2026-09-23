@@ -55,3 +55,9 @@ Playwright ne sert plus qu'à la connexion (et à récupérer les cookies) et au
 - Il faut lire le `sellerId` et le `consentId` au démarrage de la session (dans le DOM ou dans `GET /cart`, et dans les cookies).
 - `addToCart` doit additionner la quantité déjà présente dans le panier avant d'envoyer la quantité absolue.
 - Limiter le débit des requêtes (quelques-unes par seconde au maximum) et mettre en cache les résultats de recherche pour la semaine.
+
+## Compléments (2e passage)
+- Dans chaque fiche produit, `div.qa2c-wrapper` porte `data-product-id`, `data-offer-id`, `data-stock` (stock du magasin), `data-seller-type`, `data-seller-id` (identifiant du magasin, identique pour tous les produits du drive) et `data-sales-restriction`.
+- `GET /cart/config` → `consentCookieProperties.name = "lark-consentId"` (cookie qui contient le `consentId`), `cookieProperties.name = "lark-cart"`, réservation de créneau : `lark-slot`.
+- Dans `GET /cart`, le `sellerId` se trouve dans `items[].offering.context.seller.id`.
+- Page de recherche paginée : `?page=N`.

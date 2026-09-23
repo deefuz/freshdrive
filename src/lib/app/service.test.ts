@@ -82,6 +82,22 @@ describe("FreshDriveApp", () => {
     expect(app.session).toMatchObject({ ok: true, message: "Session reprise de Chrome, drive détecté." });
   });
 
+  it("dessine les recettes en arrière-plan une fois la semaine prête, et signale les dessins manqués", async () => {
+    const illustrate = vi.fn<NonNullable<AppDeps["illustrate"]>>(async () => ({
+      drawn: ["Pâtes"],
+      rejected: ["Riz"],
+      error: "délai dépassé",
+    }));
+    const { app } = setup(undefined, { illustrate });
+    const { id } = app.startCreateWeek(brief);
+    await app.runner.idle();
+    expect(app.runner.current()?.status).toBe("done");
+    await app.illustrationsIdle();
+    expect(illustrate).toHaveBeenCalledWith(recipes);
+    expect(app.isIllustrating(id)).toBe(false);
+    expect(app.getWeek(id)?.warnings).toContain("Illustrations : 1 recette sans dessin (délai dépassé).");
+  });
+
   it("une seule tâche à la fois : la 2e demande échoue sans créer de semaine", async () => {
     const { gate, release } = blocker();
     const { app, store } = setup(

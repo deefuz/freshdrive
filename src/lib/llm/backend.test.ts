@@ -53,6 +53,14 @@ describe("createClaudeCodeBackend", () => {
     );
   });
 
+  it("drawVisuals : prompt d'illustration et schéma des visuels", async () => {
+    const visuals = [{ recipeId: "a", svg: "<svg/>" }];
+    const exec = fakeExec({ visuals });
+    await expect(createClaudeCodeBackend({ exec }).drawVisuals([makeRecipe({ id: "a", title: "Dahl" })])).resolves.toEqual(visuals);
+    expect(promptOf(exec)).toContain("- a : Dahl.");
+    expect(schemaOf(exec).properties.visuals).toBeDefined();
+  });
+
   it("generateMenu refuse des identifiants de recette en double", async () => {
     const exec = fakeExec({ recipes: [makeRecipe({ id: "a" }), makeRecipe({ id: "a" })] });
     await expect(createClaudeCodeBackend({ exec }).generateMenu(brief, ctx)).rejects.toThrow(/en double/);

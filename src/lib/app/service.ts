@@ -1,5 +1,6 @@
 import type { OpenedStore } from "../auchan/open";
 import type { WeeklyContext } from "../context/build";
+import type { IllustrateResult } from "../illustrate";
 import { JobRunner, reconcileStaleJob } from "../jobs/runner";
 import type { LlmBackend } from "../llm/backend";
 import { type Brief, servingsFor } from "../recipes/brief";
@@ -22,6 +23,8 @@ export interface AppDeps {
   backend: () => LlmBackend;
   openAuchan: () => Promise<OpenedStore>;
   loadContext: (connector: StoreConnector) => Promise<WeeklyContext>;
+  /** dessine les recettes sans illustration ; absent = pas d'illustrations automatiques */
+  illustrate?: (recipes: Recipe[]) => Promise<IllustrateResult>;
   now?: () => Date;
 }
 
@@ -44,6 +47,8 @@ export class FreshDriveApp {
   readonly favorites: FavoriteStore;
   readonly runner: JobRunner;
   session: SessionStatus | null = null;
+  /** dessins en cours, par semaine (hors file des tâches : ils ne bloquent ni le panier ni les modifications) */
+  private readonly drawing = new Map<string, Promise<void>>();
 
   constructor(private readonly deps: AppDeps) {
     this.store = deps.store;
@@ -128,11 +133,48 @@ export class FreshDriveApp {
     }
   }
 
+  /** Vrai tant que les illustrations de la semaine sont en train d'être dessinées. */
+  isIllustrating(weekId: string): boolean {
+    return this.drawing.has(weekId);
+  }
+
+  /** Attend la fin de tous les dessins en cours (tests, CLI). */
+  async illustrationsIdle(): Promise<void> {
+    await Promise.all([...this.drawing.values()]);
+  }
+
+  /** Lance en arrière-plan le dessin des recettes sans illustration ; à la suite d'un dessin déjà en cours. */
+  private illustrateLater(weekId: string): void {
+    const illustrate = this.deps.illustrate;
+    if (!illustrate) return;
+    const previous = this.drawing.get(weekId) ?? Promise.resolve();
+    const task = previous
+      .then(async () => {
+        const week = this.store.get(weekId);
+        if (!week || (week.status !== "ready" && week.status !== "pushed")) return;
+        const result = await illustrate(week.recipes);
+        if (!result.rejected.length || !this.store.get(weekId)) return;
+        const n = result.rejected.length;
+        const warning = `Illustrations : ${n} recette${n > 1 ? "s" : ""} sans dessin${result.error ? ` (${result.error})` : ""}.`;
+        this.store.update(weekId, (w) => {
+          w.warnings = [...(w.warnings ?? []).filter((x) => !x.startsWith("Illustrations :")), warning];
+        });
+      })
+      .catch((e) => console.error(`FreshDrive : illustrations non dessinées (${(e as Error).message})`))
+      .finally(() => {
+        if (this.drawing.get(weekId) === task) this.drawing.delete(weekId);
+      });
+    this.drawing.set(weekId, task);
+  }
+
   private launchCreate(id: string): Week {
     this.store.update(id, (w) => {
       w.status = "generating";
     });
-    this.runner.start(id, "create", (job) => runCreateWeek(id, this.workflowDeps(), job));
+    this.runner.start(id, "create", async (job) => {
+      await runCreateWeek(id, this.workflowDeps(), job);
+      this.illustrateLater(id);
+    });
     return this.store.get(id)!;
   }
 
@@ -195,7 +237,10 @@ export class FreshDriveApp {
     if (week.status !== "ready") throw new ActionError("La semaine n'est pas prête.");
     if (!week.recipes.some((r) => r.id === recipeId)) throw new ActionError("Recette introuvable.");
     this.assertIdle();
-    this.runner.start(id, "revise-recipe", (job) => runReviseRecipe(id, recipeId, text, this.workflowDeps(), job));
+    this.runner.start(id, "revise-recipe", async (job) => {
+      await runReviseRecipe(id, recipeId, text, this.workflowDeps(), job);
+      this.illustrateLater(id);
+    });
   }
 
   startAddRecipes(id: string): void {
@@ -209,7 +254,10 @@ export class FreshDriveApp {
     }
     this.assertIdle();
     const count = Math.min(ADD_RECIPES_COUNT, MAX_WEEK_RECIPES - week.recipes.length);
-    this.runner.start(id, "add-recipes", (job) => runAddRecipes(id, count, this.workflowDeps(), job));
+    this.runner.start(id, "add-recipes", async (job) => {
+      await runAddRecipes(id, count, this.workflowDeps(), job);
+      this.illustrateLater(id);
+    });
   }
 
   /** Met la semaine à la corbeille (data/weeks/corbeille), sauf si une tâche tourne dessus. */

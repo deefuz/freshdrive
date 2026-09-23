@@ -9,6 +9,7 @@ export function fakeBackend(overrides: Partial<LlmBackend> = {}): LlmBackend {
     reviseMenu: vi.fn<LlmBackend["reviseMenu"]>(async (_brief, _ctx, recipes) => recipes),
     reviseRecipe: vi.fn<LlmBackend["reviseRecipe"]>(async (_brief, _ctx, recipe) => recipe),
     arbitrate: vi.fn<LlmBackend["arbitrate"]>(async () => new Map<string, number>()),
+    drawVisuals: vi.fn<LlmBackend["drawVisuals"]>(async () => []),
     ...overrides,
   };
 }

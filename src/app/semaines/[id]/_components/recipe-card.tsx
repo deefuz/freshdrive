@@ -11,6 +11,7 @@ export function RecipeCard({
   pushed,
   favorite,
   visual,
+  drawing,
 }: {
   weekId: string;
   recipe: Recipe;
@@ -22,6 +23,8 @@ export function RecipeCard({
   favorite: boolean;
   /** adresse de l'illustration de la recette, s'il y en a une */
   visual: string | null;
+  /** illustration en train d'être dessinée */
+  drawing: boolean;
 }) {
   const kids = new Set(recipe.kidSteps ?? []);
   const n = recipe.nutritionPerServing;
@@ -29,9 +32,18 @@ export function RecipeCard({
     <article
       className={`${card} flex flex-col transition-shadow duration-200 ${selected ? "ring-3 ring-vichy" : "hover:shadow-lift"}`}
     >
-      {visual && (
+      {visual ? (
         // eslint-disable-next-line @next/next/no-img-element -- SVG local servi par une route, pas d'optimisation utile
         <img src={visual} alt="" className="aspect-[16/7] w-full rounded-t object-cover" />
+      ) : (
+        drawing && (
+          <div className="flex aspect-[16/7] w-full items-center justify-center rounded-t bg-oat">
+            <p className="flex items-center gap-2 text-sm text-graphite">
+              <span className="size-2 animate-pulse rounded-full bg-vichy" aria-hidden="true" />
+              Illustration en cours…
+            </p>
+          </div>
+        )
       )}
       <div className="flex flex-1 flex-col px-5 pt-4 pb-4">
         <div className="flex min-h-6 items-start justify-between gap-3">

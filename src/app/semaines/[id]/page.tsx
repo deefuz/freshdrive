@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { ActionButton } from "@/app/_components/action-button";
 import { ConfirmActionButton } from "@/app/_components/confirm-action-button";
+import { JobPoller } from "@/app/_components/job-poller";
 import { JobProgress } from "@/app/_components/job-progress";
 import { btn, notice, pageTitle, sectionTitle } from "@/app/_components/ui";
 import { addRecipesAction, deleteWeekAction, retryCreateAction } from "@/app/actions";
@@ -62,6 +63,7 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
   }
 
   const totals = weekTotals(week);
+  const drawing = app.isIllustrating(week.id);
   const full = week.selectedRecipeIds.length >= week.brief.dinners;
   return (
     <div className="space-y-10">
@@ -97,6 +99,8 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
           auchan.fr avant toute action.
         </p>
       )}
+      {/* les illustrations arrivent en arrière-plan : la page se recharge jusqu'à la fin du dessin */}
+      {drawing && <JobPoller intervalMs={5000} />}
       <BudgetBar
         weekId={week.id}
         totals={totals}
@@ -125,6 +129,7 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
               pushed={week.status === "pushed"}
               favorite={app.favorites.has(r.title)}
               visual={visualUrl(r.title)}
+              drawing={drawing}
             />
           ))}
         </div>

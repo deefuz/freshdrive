@@ -1,6 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { WeeklyContext } from "../context/build";
+import { buildVisualsPrompt, type DrawnVisual, VisualsSchema } from "../illustrate";
 import type { Brief } from "./brief";
 import {
   buildMenuPrompt,
@@ -75,4 +76,15 @@ export async function reviseRecipe(
     messages: [{ role: "user", content: buildReviseRecipePrompt(brief, ctx, recipe, others, instruction) }],
   });
   return { ...unwrapParsed(response), id: recipe.id };
+}
+
+/** Illustrations SVG d'un petit lot de recettes (voir ILLUSTRATION_BATCH : la réponse tient sous 16 000 jetons). */
+export async function drawVisuals(client: Anthropic, recipes: Recipe[]): Promise<DrawnVisual[]> {
+  const response = await client.messages.parse({
+    model: RECIPE_MODEL,
+    max_tokens: 16000,
+    output_config: { effort: "medium", format: zodOutputFormat(VisualsSchema) },
+    messages: [{ role: "user", content: buildVisualsPrompt(recipes) }],
+  });
+  return unwrapParsed(response).visuals;
 }

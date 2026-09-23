@@ -10,6 +10,7 @@ import { summarizeContext } from "@/lib/context/build";
 import { loadWeeklyContext } from "@/lib/context/cache";
 import type { JobContext } from "@/lib/jobs/runner";
 import { formatEur } from "@/lib/format";
+import { illustrateRecipes } from "@/lib/illustrate";
 import { selectBackend } from "@/lib/llm/backend";
 import { ProfileStore } from "@/lib/profile/store";
 import { type Brief, BriefSchema } from "@/lib/recipes/brief";
@@ -112,6 +113,11 @@ async function main() {
   });
   if (recipesFile) step(`Recettes lues depuis ${recipesFile}`);
   await runCreateWeek(created.id, deps, cliJob, opts);
+  if (!has("--no-visuels")) {
+    step("Illustrations des recettes");
+    const drawn = await illustrateRecipes(store.get(created.id)!.recipes, (batch) => backend.drawVisuals(batch));
+    console.log(`${drawn.drawn.length} dessinée(s)${drawn.rejected.length ? `, ${drawn.rejected.length} sans dessin${drawn.error ? ` (${drawn.error})` : ""}` : ""}`);
+  }
   console.log();
   let week = store.get(created.id)!;
   let totals = printWeek(week);

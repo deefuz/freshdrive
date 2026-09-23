@@ -101,7 +101,7 @@ Tout reste sur ta machine, dans le dossier `data/` (ignoré par git) :
 | `data/visuels/` | les illustrations des recettes |
 | `data/auchan-state.json` | **ta session Auchan (cookies) : ne la partage jamais** |
 
-Les illustrations des recettes sont des dessins SVG que Claude Code réalise à la demande (« dessine les visuels de la semaine du … ») en suivant le style décrit dans `DESIGN.md`. Une recette sans illustration s'affiche simplement sans image.
+Les illustrations des recettes sont des dessins SVG que Claude réalise automatiquement, en arrière-plan, dès qu'une semaine est prête (compte une à deux minutes par lot de 3 recettes ; la page se met à jour toute seule). Le style suit la section « Illustrations de recettes » de `DESIGN.md`. Pour les désactiver, ajoute `FRESHDRIVE_VISUELS=non` dans `.env.local` (ou `--no-visuels` pour le CLI). Une recette sans illustration s'affiche simplement sans image.
 
 ## En cas de souci
 

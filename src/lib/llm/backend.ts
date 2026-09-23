@@ -1,9 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { z } from "zod";
 import type { WeeklyContext } from "../context/build";
+import { buildVisualsPrompt, type DrawnVisual, VisualsSchema } from "../illustrate";
 import { type Arbiter, buildArbiterPrompt, ChoicesSchema, createClaudeArbiter, toChoiceMap } from "../matching/arbiter";
 import type { Brief } from "../recipes/brief";
-import { generateMenu, reviseMenu, reviseRecipe } from "../recipes/generate";
+import { drawVisuals, generateMenu, reviseMenu, reviseRecipe } from "../recipes/generate";
 import {
   buildMenuPrompt,
   buildRevisePrompt,
@@ -24,6 +25,8 @@ export interface LlmBackend {
   reviseMenu(brief: Brief, ctx: WeeklyContext, recipes: Recipe[], instruction: string): Promise<Recipe[]>;
   reviseRecipe(brief: Brief, ctx: WeeklyContext, recipe: Recipe, others: Recipe[], instruction: string): Promise<Recipe>;
   arbitrate: Arbiter;
+  /** une illustration SVG par recette (voir illustrate.ts) */
+  drawVisuals(recipes: Recipe[]): Promise<DrawnVisual[]>;
 }
 
 export function createApiBackend(client: Anthropic): LlmBackend {
@@ -35,6 +38,7 @@ export function createApiBackend(client: Anthropic): LlmBackend {
       assertUniqueRecipeIds(await reviseMenu(client, brief, ctx, recipes, instruction)),
     reviseRecipe: (brief, ctx, recipe, others, instruction) => reviseRecipe(client, brief, ctx, recipe, others, instruction),
     arbitrate: createClaudeArbiter(client),
+    drawVisuals: (recipes) => drawVisuals(client, recipes),
   };
 }
 
@@ -57,6 +61,7 @@ export function createClaudeCodeBackend(deps: { exec?: ExecFn; timeoutMs?: numbe
       id: recipe.id,
     }),
     arbitrate: async (items) => toChoiceMap((await ask(ChoicesSchema, buildArbiterPrompt(items))).choices),
+    drawVisuals: async (recipes) => (await ask(VisualsSchema, buildVisualsPrompt(recipes))).visuals,
   };
 }
 

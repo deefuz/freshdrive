@@ -1,5 +1,6 @@
 import { openAuchan } from "../auchan/open";
 import { loadWeeklyContext } from "../context/cache";
+import { illustrateRecipes } from "../illustrate";
 import { selectBackend } from "../llm/backend";
 import { FavoriteStore } from "../store/favorites";
 import { WeekStore } from "../store/weeks";
@@ -18,6 +19,11 @@ export function getApp(): FreshDriveApp {
     backend: () => selectBackend(),
     openAuchan: () => openAuchan(),
     loadContext: (connector) => loadWeeklyContext(connector),
+    // illustrations automatiques des recettes ; FRESHDRIVE_VISUELS=non pour les désactiver
+    illustrate:
+      process.env.FRESHDRIVE_VISUELS === "non"
+        ? undefined
+        : (recipes) => illustrateRecipes(recipes, (batch) => selectBackend().drawVisuals(batch)),
   });
   return globalForApp.__freshdriveApp;
 }

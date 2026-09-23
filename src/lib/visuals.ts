@@ -12,10 +12,23 @@ export function visualSlug(title: string): string {
     .replace(/^-+|-+$/g, "");
 }
 
+export function hasVisual(title: string, dir: string = VISUALS_DIR): boolean {
+  const slug = visualSlug(title);
+  return slug !== "" && fs.existsSync(path.join(dir, `${slug}.svg`));
+}
+
 /** Adresse du visuel d'une recette, ou null s'il n'a pas encore été dessiné. */
 export function visualUrl(title: string, dir: string = VISUALS_DIR): string | null {
-  const slug = visualSlug(title);
-  return slug && fs.existsSync(path.join(dir, `${slug}.svg`)) ? `/visuels/${slug}` : null;
+  return hasVisual(title, dir) ? `/visuels/${visualSlug(title)}` : null;
+}
+
+/** Enregistre le visuel d'une recette (écriture atomique). */
+export function writeVisual(title: string, svg: string, dir: string = VISUALS_DIR): void {
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, `${visualSlug(title)}.svg`);
+  const tmp = `${file}.${process.pid}.tmp`;
+  fs.writeFileSync(tmp, svg);
+  fs.renameSync(tmp, file);
 }
 
 export function readVisual(slug: string, dir: string = VISUALS_DIR): string | null {

@@ -9,7 +9,17 @@ import { FILTER_UI_LABELS } from "@/lib/week/brief-form";
 const field = "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 font-normal";
 const label = "block text-sm font-medium";
 
-export function BriefForm({ initial }: { initial: Brief }) {
+export function BriefForm({
+  initial,
+  favorites,
+  preselected,
+}: {
+  initial: Brief;
+  /** favoris proposés à la reprise */
+  favorites: { id: string; title: string }[];
+  /** favoris cochés d'avance (lien « Réutiliser » de l'accueil) */
+  preselected: string[];
+}) {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(createWeekAction, { error: null });
   // après un refus, on réaffiche ce qui a été saisi (React réinitialise le formulaire après l'action)
   const sent = state.values;
@@ -67,6 +77,27 @@ export function BriefForm({ initial }: { initial: Brief }) {
           className={field}
         />
       </label>
+      {favorites.length > 0 && (
+        <fieldset>
+          <legend className="text-sm font-medium">Reprendre des favoris</legend>
+          <p className="text-xs text-zinc-500">
+            Ajoutés au menu et retenus d&apos;office (un par dîner au plus) ; Claude complète avec d&apos;autres recettes.
+          </p>
+          <div className="mt-2 flex flex-wrap gap-4">
+            {favorites.map((f) => (
+              <label key={f.id} className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  name="favorites"
+                  value={f.id}
+                  defaultChecked={sent ? (sent.favorites ?? []).includes(f.id) : preselected.includes(f.id)}
+                />
+                ★ {f.title}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
       {state.error && (
         <p role="alert" className="text-sm text-red-700">
           {state.error}

@@ -14,7 +14,8 @@ import { RecipeCard } from "./_components/recipe-card";
 export default async function WeekPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   await connection();
-  const week = getApp().getWeek(id);
+  const app = getApp();
+  const week = app.getWeek(id);
   if (!week) notFound();
 
   const view = weekView(week);
@@ -94,6 +95,7 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
               selected={week.selectedRecipeIds.includes(r.id)}
               full={full}
               pushed={week.status === "pushed"}
+              favorite={app.favorites.has(r.title)}
             />
           ))}
         </div>

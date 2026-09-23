@@ -3,10 +3,17 @@ import { getApp } from "@/lib/app/instance";
 import { DEFAULT_BRIEF } from "@/lib/week/brief-form";
 import { BriefForm } from "./brief-form";
 
-export default async function NewWeekPage() {
+export default async function NewWeekPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const { favori } = await searchParams;
   await connection();
   const app = getApp();
   const brief = app.store.latestBrief() ?? DEFAULT_BRIEF;
+  const favorites = app.favorites.list().map((f) => ({ id: f.id, title: f.recipe.title }));
+  const preselected = [favori ?? []].flat().filter((id) => favorites.some((f) => f.id === id));
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-semibold">Nouvelle semaine</h1>
@@ -19,7 +26,7 @@ export default async function NewWeekPage() {
           Une tâche est déjà en cours : attends qu&apos;elle se termine avant d&apos;en lancer une autre.
         </p>
       )}
-      <BriefForm initial={brief} />
+      <BriefForm initial={brief} favorites={favorites} preselected={preselected} />
     </div>
   );
 }

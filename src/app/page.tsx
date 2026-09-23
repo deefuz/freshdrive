@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { connection } from "next/server";
 import { ActionButton } from "@/app/_components/action-button";
-import { checkSessionAction } from "@/app/actions";
+import { checkSessionAction, removeFavoriteAction } from "@/app/actions";
 import { getApp } from "@/lib/app/instance";
 import { summarizeContext } from "@/lib/context/build";
 import { readCachedContext } from "@/lib/context/cache";
-import { formatDateTime, formatEur, formatWeekDate, JOB_LABELS, weekStatusLabel } from "@/lib/format";
+import { formatDateTime, formatEur, formatWeekDate, JOB_LABELS, TAG_LABELS, weekStatusLabel } from "@/lib/format";
 import { weekTotals } from "@/lib/week/edit";
 
 const card = "rounded-xl border border-zinc-200 bg-white p-4";
@@ -17,6 +17,7 @@ export default async function HomePage() {
   const job = app.runner.current();
   const context = readCachedContext();
   const session = app.session;
+  const favorites = app.favorites.list();
 
   return (
     <div className="space-y-8">
@@ -96,6 +97,39 @@ export default async function HomePage() {
                 </li>
               );
             })}
+          </ul>
+        )}
+      </section>
+
+      <section>
+        <h2 className="mb-3 text-xl font-semibold">Mes favoris</h2>
+        {favorites.length === 0 ? (
+          <p className="text-zinc-600">
+            Aucun favori pour l&apos;instant : touche l&apos;étoile d&apos;une recette pour la retrouver ici.
+          </p>
+        ) : (
+          <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white">
+            {favorites.map((f) => (
+              <li key={f.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="font-medium">★ {f.recipe.title}</p>
+                  <p className="text-sm text-zinc-600">
+                    {f.recipe.prepMinutes + f.recipe.cookMinutes} min
+                    {f.recipe.tags.length ? ` · ${f.recipe.tags.map((t) => TAG_LABELS[t]).join(", ")}` : ""}
+                    {` · semaine du ${formatWeekDate(f.sourceWeekId)}`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Link
+                    href={{ pathname: "/semaines/nouvelle", query: { favori: f.id } }}
+                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-700"
+                  >
+                    Réutiliser
+                  </Link>
+                  <ActionButton action={removeFavoriteAction.bind(null, f.id)} label="Retirer" pendingLabel="Retrait…" />
+                </div>
+              </li>
+            ))}
           </ul>
         )}
       </section>

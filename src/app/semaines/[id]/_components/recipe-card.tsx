@@ -1,6 +1,6 @@
 import { formatQty, TAG_LABELS } from "@/lib/format";
 import type { Recipe } from "@/lib/recipes/schema";
-import { RecipeToggle, ReviseRecipeForm } from "./week-controls";
+import { FavoriteToggle, RecipeToggle, ReviseRecipeForm } from "./week-controls";
 
 export function RecipeCard({
   weekId,
@@ -8,6 +8,7 @@ export function RecipeCard({
   selected,
   full,
   pushed,
+  favorite,
 }: {
   weekId: string;
   recipe: Recipe;
@@ -15,6 +16,8 @@ export function RecipeCard({
   full: boolean;
   /** semaine déjà envoyée au panier : la recette ne peut plus être modifiée */
   pushed: boolean;
+  /** recette en favori (étoile pleine) */
+  favorite: boolean;
 }) {
   const kids = new Set(recipe.kidSteps ?? []);
   const n = recipe.nutritionPerServing;
@@ -27,7 +30,10 @@ export function RecipeCard({
           <h3 className="font-semibold">{recipe.title}</h3>
           <p className="text-sm text-zinc-600">{recipe.summary}</p>
         </div>
-        <RecipeToggle weekId={weekId} recipeId={recipe.id} selected={selected} disabled={!selected && full} />
+        <div className="flex shrink-0 items-start gap-3">
+          <FavoriteToggle weekId={weekId} recipeId={recipe.id} favorite={favorite} />
+          <RecipeToggle weekId={weekId} recipeId={recipe.id} selected={selected} disabled={!selected && full} />
+        </div>
       </div>
       <p className="mt-2 text-xs text-zinc-500">
         {recipe.prepMinutes + recipe.cookMinutes} min · {recipe.servings} portions

@@ -1,7 +1,13 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { chooseProductAction, reviseRecipeAction, setPantryAction, toggleRecipeAction } from "@/app/actions";
+import {
+  chooseProductAction,
+  reviseRecipeAction,
+  setPantryAction,
+  toggleFavoriteAction,
+  toggleRecipeAction,
+} from "@/app/actions";
 import type { ActionResult } from "@/lib/app/action-result";
 
 function useServerAction() {
@@ -143,5 +149,25 @@ export function ReviseRecipeForm({ weekId, recipeId }: { weekId: string; recipeI
       </button>
       <p className="text-xs text-zinc-500">Claude réécrit la recette, puis MyFresh recherche à nouveau ses produits.</p>
     </form>
+  );
+}
+
+export function FavoriteToggle({ weekId, recipeId, favorite }: { weekId: string; recipeId: string; favorite: boolean }) {
+  const { pending, error, run } = useServerAction();
+  return (
+    <span className="flex flex-col items-end">
+      <button
+        type="button"
+        aria-pressed={favorite}
+        aria-label={favorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+        title={favorite ? "Retirer des favoris" : "Ajouter aux favoris"}
+        disabled={pending}
+        onClick={() => run(() => toggleFavoriteAction(weekId, recipeId, !favorite))}
+        className={`text-xl leading-none disabled:opacity-50 ${favorite ? "text-amber-500" : "text-zinc-300 hover:text-amber-400"}`}
+      >
+        {favorite ? "★" : "☆"}
+      </button>
+      <ErrorText error={error} />
+    </span>
   );
 }

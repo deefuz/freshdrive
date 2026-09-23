@@ -27,9 +27,10 @@ export async function checkSessionAction(): Promise<ActionResult> {
 export async function createWeekAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const parsed = parseBriefForm(formData);
   if (!parsed.ok) return { error: parsed.error, values: formValues(formData) };
+  const favoriteIds = formData.getAll("favorites").map(String);
   let id: string;
   try {
-    id = getApp().startCreateWeek(parsed.brief).id;
+    id = getApp().startCreateWeek(parsed.brief, favoriteIds).id;
   } catch (e) {
     return failure(e, formValues(formData));
   }
@@ -66,4 +67,12 @@ export async function reviseRecipeAction(
 
 export async function confirmPushAction(weekId: string): Promise<ActionResult> {
   return attempt(() => getApp().startPush(String(weekId)));
+}
+
+export async function toggleFavoriteAction(weekId: string, recipeId: string, favorite: boolean): Promise<ActionResult> {
+  return attempt(() => getApp().setFavorite(String(weekId), String(recipeId), favorite === true));
+}
+
+export async function removeFavoriteAction(favoriteId: string): Promise<ActionResult> {
+  return attempt(() => getApp().removeFavorite(String(favoriteId)));
 }

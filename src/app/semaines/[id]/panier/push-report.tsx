@@ -24,7 +24,7 @@ export function PushReportView({ report }: { report: PushReport }) {
         </section>
       )}
       {report.failed.length > 0 && (
-        <section className="rounded bg-tomato-wash p-5 text-tomato">
+        <section className="rounded bg-bordeaux-wash p-5 text-bordeaux">
           <h2 className="font-sans text-base font-bold tracking-normal">En échec : à ajouter à la main</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
             {report.failed.map((l) => (

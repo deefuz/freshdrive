@@ -12,11 +12,11 @@ export function JobProgress({ job }: { job: JobState }) {
       <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-oat">
         {job.progress && pct !== null ? (
           <div
-            className="h-full origin-left rounded-full bg-lime transition-transform duration-500 ease-out-quart"
+            className="h-full origin-left rounded-full bg-vichy transition-transform duration-500 ease-out-quart"
             style={{ transform: `scaleX(${pct / 100})` }}
           />
         ) : (
-          <div className="progress-indeterminate h-full w-1/3 rounded-full bg-lime" />
+          <div className="progress-indeterminate h-full w-1/3 rounded-full bg-vichy" />
         )}
       </div>
       {job.progress && pct !== null && (

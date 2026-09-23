@@ -27,7 +27,7 @@ export function RecipeCard({
   const n = recipe.nutritionPerServing;
   return (
     <article
-      className={`${card} flex flex-col transition-shadow duration-200 ${selected ? "ring-3 ring-lime" : "hover:shadow-lift"}`}
+      className={`${card} flex flex-col transition-shadow duration-200 ${selected ? "ring-3 ring-vichy" : "hover:shadow-lift"}`}
     >
       {visual && (
         // eslint-disable-next-line @next/next/no-img-element -- SVG local servi par une route, pas d'optimisation utile
@@ -36,7 +36,7 @@ export function RecipeCard({
       <div className="flex flex-1 flex-col px-5 pt-4 pb-4">
         <div className="flex min-h-6 items-start justify-between gap-3">
           <div className="flex flex-wrap gap-1.5 pt-0.5">
-            {selected && <span className={`${badge} bg-lime text-charcoal`}>Retenue</span>}
+            {selected && <span className={`${badge} bg-vichy text-paper`}>Retenue</span>}
             {kids.size > 0 && <span className={`${badge} bg-honey-wash text-honey-ink`}>Avec les enfants</span>}
           </div>
           <FavoriteToggle weekId={weekId} recipeId={recipe.id} favorite={favorite} />

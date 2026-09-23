@@ -26,12 +26,12 @@ export function BudgetBar({
         <div className="min-w-56 flex-1">
           <p className="flex flex-wrap items-baseline gap-x-2">
             <span
-              className={`font-display text-3xl font-extrabold tracking-[-0.03em] tabular-nums ${totals.overBudget ? "text-tomato" : "text-basil"}`}
+              className={`font-display text-3xl font-extrabold tracking-[-0.03em] tabular-nums ${totals.overBudget ? "text-bordeaux" : "text-basil"}`}
             >
               {formatEur(totals.net)}
             </span>
             <span className="text-graphite">sur {formatEur(totals.budget)}</span>
-            <span className={`ml-auto text-sm font-bold ${totals.overBudget ? "text-tomato" : "text-charcoal"}`}>
+            <span className={`ml-auto text-sm font-bold ${totals.overBudget ? "text-bordeaux" : "text-charcoal"}`}>
               {totals.overBudget
                 ? `${formatEur(-totals.remaining)} au-dessus du budget`
                 : `Reste ${formatEur(totals.remaining)}`}
@@ -46,7 +46,7 @@ export function BudgetBar({
             aria-valuenow={pct}
           >
             <div
-              className={`h-full origin-left rounded-full transition-transform duration-300 ease-out-quart ${totals.overBudget ? "bg-tomato" : "bg-lime"}`}
+              className={`h-full origin-left rounded-full transition-transform duration-300 ease-out-quart ${totals.overBudget ? "bg-bordeaux" : "bg-basil"}`}
               style={{ transform: `scaleX(${pct / 100})` }}
             />
           </div>

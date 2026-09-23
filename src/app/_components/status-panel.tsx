@@ -11,7 +11,7 @@ type Tone = "ok" | "ko" | "idle";
 
 const PILL: Record<Tone, string> = {
   ok: "bg-lime-wash text-basil-deep",
-  ko: "bg-tomato-wash text-tomato",
+  ko: "bg-bordeaux-wash text-bordeaux",
   idle: "bg-oat text-graphite",
 };
 
@@ -19,7 +19,7 @@ function Pill({ tone, children }: { tone: Tone; children: ReactNode }) {
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold ${PILL[tone]}`}>
       <span
-        className={`size-1.5 rounded-full ${tone === "ok" ? "bg-basil" : tone === "ko" ? "bg-tomato" : "bg-pebble"}`}
+        className={`size-1.5 rounded-full ${tone === "ok" ? "bg-basil" : tone === "ko" ? "bg-bordeaux" : "bg-pebble"}`}
         aria-hidden="true"
       />
       {children}
@@ -73,7 +73,7 @@ export function StatusPanel({
           </Pill>
         }
       >
-        <p className={session && !session.ok ? "text-tomato" : "text-graphite"}>
+        <p className={session && !session.ok ? "text-bordeaux" : "text-graphite"}>
           {session ? session.message : "La session sera vérifiée à la création d'une semaine."}
         </p>
         <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2 pt-1">

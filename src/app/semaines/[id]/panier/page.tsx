@@ -109,7 +109,7 @@ export default async function CartPage({ params }: { params: Promise<{ id: strin
         </p>
       )}
       {!preview ? (
-        <div className="rounded bg-tomato-wash p-5 text-tomato">
+        <div className="rounded bg-bordeaux-wash p-5 text-bordeaux">
           <p className="font-bold">Impossible de lire ton panier Auchan.</p>
           <p className="text-sm">{error}</p>
           <p className="mt-2 text-sm">

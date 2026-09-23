@@ -29,7 +29,7 @@ export function ActionButton({
         {pending ? pendingLabel : label}
       </button>
       {state.error && (
-        <p role="alert" className="mt-1.5 text-sm text-tomato">
+        <p role="alert" className="mt-1.5 text-sm text-bordeaux">
           {state.error}
         </p>
       )}

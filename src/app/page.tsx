@@ -13,11 +13,11 @@ import type { Week } from "@/lib/store/weeks";
 import { visualUrl } from "@/lib/visuals";
 import { weekTotals } from "@/lib/week/edit";
 
-/** Couleur du badge de statut : bleu envoyée, citron prête, tomate envoi interrompu, miel sinon. */
+/** Couleur du badge de statut : bleu envoyée, basilic prête, bordeaux envoi interrompu, miel sinon. */
 function statusBadge(week: Week): string {
-  if (week.pushStartedAt && week.status !== "pushed") return "bg-tomato text-paper";
+  if (week.pushStartedAt && week.status !== "pushed") return "bg-bordeaux text-paper";
   if (week.status === "pushed") return "bg-blueberry text-paper";
-  if (week.status === "ready") return "bg-lime text-charcoal";
+  if (week.status === "ready") return "bg-basil text-paper";
   return "bg-honey-wash text-honey-ink";
 }
 
@@ -45,7 +45,7 @@ export default async function HomePage() {
         {job?.status === "running" && (
           <section className="flex flex-wrap items-center justify-between gap-3 rounded bg-lime-wash px-5 py-4" aria-live="polite">
             <p className="flex items-center gap-3 text-basil-deep">
-              <span className="size-2.5 shrink-0 animate-pulse rounded-full bg-lime" aria-hidden="true" />
+              <span className="size-2.5 shrink-0 animate-pulse rounded-full bg-vichy" aria-hidden="true" />
               {JOB_LABELS[job.kind]} en cours : {job.step}…
             </p>
             <Link href={`/semaines/${job.weekId}`} className={btn.secondary}>

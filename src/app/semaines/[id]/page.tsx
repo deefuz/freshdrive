@@ -40,7 +40,7 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
     return (
       <div className="space-y-4">
         {heading}
-        <div className="rounded bg-tomato-wash p-5 text-tomato">
+        <div className="rounded bg-bordeaux-wash p-5 text-bordeaux">
           <p className="font-bold">La préparation de la semaine n&apos;a pas abouti.</p>
           {week.job?.error && <p className="mt-1 text-sm">{week.job.error}</p>}
           <ActionButton

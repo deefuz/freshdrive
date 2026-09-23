@@ -26,7 +26,9 @@ Réussir, c'est : choisir sa semaine en quelques minutes, rester dans le budget,
 
 Ton : tutoiement, phrases courtes, chaleureux et concret. Pas de jargon technique dans l'interface (on dit « panier », « placard », « dîners », pas « job », « push », « matching »).
 
-Référence assumée et très proche : **HelloFresh** (hellofresh.fr), sa page menu et ses cartes recettes : fond crème, titres ronds très gras, boutons anthracite, pastilles contour, badges colorés en capitales, pied de carte « 25 min | Rapide • Épicé ».
+Signature visuelle : **la nappe vichy rouge**, familiale et bistrot, qui encadre l'interface.
+
+Référence assumée pour la mise en page : **HelloFresh** (hellofresh.fr), sa page menu et ses cartes recettes : fond crème, titres ronds très gras, boutons anthracite, pastilles contour, badges colorés en capitales, pied de carte « 25 min | Rapide • Épicé ».
 
 ## Anti-references
 

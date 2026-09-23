@@ -48,7 +48,7 @@ export function ConfirmActionButton({
         </button>
       )}
       {state.error && (
-        <p role="alert" className="text-sm text-tomato">
+        <p role="alert" className="text-sm text-bordeaux">
           {state.error}
         </p>
       )}

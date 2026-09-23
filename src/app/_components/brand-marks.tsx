@@ -12,13 +12,13 @@ export function AuchanMark() {
   );
 }
 
-/** Contexte de la semaine : étiquette promo sur citron */
+/** Contexte de la semaine : étiquette promo sur rouge vichy */
 export function ContextMark() {
   return (
-    <span className={`${tile} bg-lime`} aria-hidden="true">
-      <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="#232323" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <span className={`${tile} bg-vichy`} aria-hidden="true">
+      <svg viewBox="0 0 24 24" className="size-6" fill="none" stroke="#fffefa" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M3 12.6V4.5A1.5 1.5 0 0 1 4.5 3h8.1a1.5 1.5 0 0 1 1 .44l6.96 6.96a1.5 1.5 0 0 1 0 2.12l-7.04 7.04a1.5 1.5 0 0 1-2.12 0L3.44 13.6a1.5 1.5 0 0 1-.44-1Z" />
-        <circle cx="8" cy="8" r="1.6" fill="#232323" />
+        <circle cx="8" cy="8" r="1.6" fill="#fffefa" />
       </svg>
     </span>
   );

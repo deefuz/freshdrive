@@ -6,8 +6,8 @@ const control =
 export const btn = {
   primary: `${control} min-h-11 bg-charcoal px-5 py-2.5 font-bold text-cream hover:bg-charcoal-hover`,
   secondary: `${control} min-h-10 border-[1.5px] border-charcoal bg-paper px-4 py-2 text-sm font-bold text-charcoal hover:bg-oat`,
-  danger: `${control} min-h-10 border-[1.5px] border-tomato bg-paper px-4 py-2 text-sm font-bold text-tomato hover:bg-tomato-wash`,
-  dangerSolid: `${control} min-h-10 border-[1.5px] border-tomato bg-tomato px-4 py-2 text-sm font-bold text-paper hover:bg-tomato-hover`,
+  danger: `${control} min-h-10 border-[1.5px] border-bordeaux bg-paper px-4 py-2 text-sm font-bold text-bordeaux hover:bg-bordeaux-wash`,
+  dangerSolid: `${control} min-h-10 border-[1.5px] border-bordeaux bg-bordeaux px-4 py-2 text-sm font-bold text-paper hover:bg-bordeaux-hover`,
 };
 
 export const link = "font-medium text-basil underline decoration-1 underline-offset-2 hover:text-basil-deep";
@@ -31,7 +31,7 @@ export const notice = {
   info: "rounded-lg bg-mint-wash p-3 text-sm text-charcoal",
   success: "rounded-lg bg-lime-wash p-3 text-sm text-basil-deep",
   warning: "rounded-lg bg-honey-wash p-3 text-sm text-honey-ink",
-  error: "rounded-lg bg-tomato-wash p-3 text-sm text-tomato",
+  error: "rounded-lg bg-bordeaux-wash p-3 text-sm text-bordeaux",
 };
 
 export const sectionTitle = "text-2xl font-bold tracking-[-0.02em]";

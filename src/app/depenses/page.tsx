@@ -22,7 +22,7 @@ function Figure({ value, label, tone = "text-charcoal" }: { value: string; label
   );
 }
 
-/** Colonnes empilées : payé (basilic) + économies promos (citron) = prix en rayon ; trait anthracite = budget. */
+/** Colonnes empilées : payé (basilic) + économies promos (miel) = prix en rayon ; trait anthracite = budget. */
 function SpendChart({ weeks }: { weeks: WeekSpend[] }) {
   // 12 % de marge au-dessus de la plus haute valeur pour que le trait de budget reste lisible
   const max = Math.max(...weeks.map((w) => Math.max(w.gross, w.budget))) * 1.12;
@@ -34,7 +34,7 @@ function SpendChart({ weeks }: { weeks: WeekSpend[] }) {
           <span className="size-3 rounded-[3px] bg-basil" aria-hidden="true" /> Payé
         </span>
         <span className="inline-flex items-center gap-2">
-          <span className="size-3 rounded-[3px] bg-lime" aria-hidden="true" /> Économies promos
+          <span className="size-3 rounded-[3px] bg-honey" aria-hidden="true" /> Économies promos
         </span>
         <span className="inline-flex items-center gap-2">
           <span className="h-0.5 w-4 bg-charcoal" aria-hidden="true" /> Budget
@@ -50,7 +50,7 @@ function SpendChart({ weeks }: { weeks: WeekSpend[] }) {
             >
               <div className="flex w-full max-w-6 flex-col-reverse gap-0.5" style={{ height: pct(w.gross) }}>
                 <div className={`bg-basil ${w.promoSaved > 0 ? "" : "rounded-t"}`} style={{ flex: `${w.net} 1 0` }} />
-                {w.promoSaved > 0 && <div className="rounded-t bg-lime" style={{ flex: `${w.promoSaved} 1 0` }} />}
+                {w.promoSaved > 0 && <div className="rounded-t bg-honey" style={{ flex: `${w.promoSaved} 1 0` }} />}
               </div>
               <div className="absolute inset-x-1 h-0.5 bg-charcoal" style={{ bottom: pct(w.budget) }} aria-hidden="true" />
               <div className="pointer-events-none absolute top-0 left-1/2 z-10 hidden w-52 -translate-x-1/2 rounded bg-charcoal p-3 text-xs text-cream shadow-lift group-hover:block group-focus-visible:block">
@@ -100,7 +100,7 @@ function SpendChart({ weeks }: { weeks: WeekSpend[] }) {
                       {formatWeekDate(w.id)}
                     </Link>
                   </td>
-                  <td className={`px-3 py-2 text-right font-bold ${w.net > w.budget ? "text-tomato" : ""}`}>{formatEur(w.net)}</td>
+                  <td className={`px-3 py-2 text-right font-bold ${w.net > w.budget ? "text-bordeaux" : ""}`}>{formatEur(w.net)}</td>
                   <td className="px-3 py-2 text-right">{formatEur(w.promoSaved)}</td>
                   <td className="px-3 py-2 text-right">{formatEur(w.loyalty)}</td>
                   <td className="px-3 py-2 text-right">{formatEur(w.budget)}</td>
@@ -175,7 +175,7 @@ export default async function SpendingPage() {
                       {p.weeks} semaine{p.weeks > 1 ? "s" : ""} · {p.packs} acheté{p.packs > 1 ? "s" : ""}
                       {p.product.promo && (
                         <span
-                          className={`${badge} ml-2 ${p.product.promo.kind === "loyalty" ? "bg-lime text-charcoal" : "bg-beet text-paper"}`}
+                          className={`${badge} ml-2 ${p.product.promo.kind === "loyalty" ? "bg-basil text-paper" : "bg-beet text-paper"}`}
                         >
                           {p.product.promo.kind === "loyalty" ? "Waaoh" : "Promo"}
                         </span>

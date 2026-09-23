@@ -24,7 +24,7 @@ function useServerAction() {
 
 function ErrorText({ error }: { error: string | null }) {
   return error ? (
-    <span role="alert" className="block text-xs text-tomato">
+    <span role="alert" className="block text-xs text-bordeaux">
       {error}
     </span>
   ) : null;
@@ -139,7 +139,7 @@ export function ReviseRecipeForm({ weekId, recipeId }: { weekId: string; recipeI
         />
       </label>
       {state.error && (
-        <p role="alert" className="text-tomato">
+        <p role="alert" className="text-bordeaux">
           {state.error}
         </p>
       )}

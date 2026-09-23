@@ -69,6 +69,24 @@ describe("scoreCandidate", () => {
     expect(uncertain.score).toBeCloseTo(3.9);
   });
 
+  it("déduit la cagnotte Waaoh réellement gagnée pour la quantité achetée", () => {
+    const base = { price: 3, pack: { value: 500, unit: "g" as const } };
+    const simple = makeProduct({ ...base, promo: { label: "10% Jour W! cagnottés", kind: "loyalty" } });
+    expect(scoreCandidate(need, simple, opts).score).toBeCloseTo(2.7);
+    // 1 paquet suffit : l'offre sur le 2ème ne rapporte rien
+    const second = makeProduct({ ...base, promo: { label: "50 % cagnottés sur le 2ème", kind: "loyalty" } });
+    expect(scoreCandidate(need, second, opts).score).toBeCloseTo(3);
+    // 2 paquets nécessaires : 1,50 € cagnottés sur 6 €
+    expect(scoreCandidate({ quantity: 1000, unit: "g" }, second, opts).score).toBeCloseTo(4.5);
+  });
+
+  it("une remise calculable compte pour son montant réel", () => {
+    const p = makeProduct({ price: 2, pack: { value: 500, unit: "g" }, promo: { label: "-60% sur le 2ème", kind: "price" } });
+    expect(scoreCandidate({ quantity: 1000, unit: "g" }, p, opts).score).toBeCloseTo(2.8);
+    // un seul paquet : la remise ne s'applique pas, aucun avantage
+    expect(scoreCandidate({ quantity: 500, unit: "g" }, p, opts).score).toBeCloseTo(2);
+  });
+
   it("applique la pénalité de pertinence quand le besoin porte un nom", () => {
     const named = { quantity: 500, unit: "g" as const, name: "courgette", searchQuery: "courgette" };
     const frozen = makeProduct({ name: "Courgettes en rondelles", price: 2, pack: { value: 500, unit: "g" } });

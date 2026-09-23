@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { promoEffect } from "./promo";
+import { loyaltyOffer, promoEffect } from "./promo";
 
 describe("promoEffect", () => {
   it("-X% sur le Nème : remise sur chaque Nème paquet", () => {
@@ -23,5 +23,20 @@ describe("promoEffect", () => {
 
   it("libellé sans montant calculable : aucun effet", () => {
     expect(promoEffect("Prix Choc", 3, 2)).toEqual({ saved: 0, loyalty: 0 });
+  });
+});
+
+describe("loyaltyOffer", () => {
+  it("cagnotte simple : dès le premier paquet", () => {
+    expect(loyaltyOffer("Prix Choc · 10% Jour W! cagnottés", 4)).toEqual({ packs: 1, credit: 0.4 });
+  });
+
+  it("cagnotte sur le Nème : il faut N paquets", () => {
+    expect(loyaltyOffer("50 % cagnottés sur le 2ème", 3)).toEqual({ packs: 2, credit: 1.5 });
+  });
+
+  it("pas de cagnotte calculable", () => {
+    expect(loyaltyOffer("-50% sur le 2ème", 3)).toBeNull();
+    expect(loyaltyOffer("Prix Choc", 3)).toBeNull();
   });
 });

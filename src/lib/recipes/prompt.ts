@@ -1,4 +1,6 @@
+import { rankWaaohOffers } from "../budget/promo";
 import type { WeeklyContext } from "../context/build";
+import { formatEur } from "../format";
 import type { Product } from "../types";
 import { type Brief, type DietFilter, servingsFor } from "./brief";
 import type { Recipe } from "./schema";
@@ -12,7 +14,7 @@ const FILTER_LABELS: Record<DietFilter, string> = {
 
 export const SYSTEM_PROMPT = `Tu es le chef d'un service de box repas familiales, en France.
 Tu composes des dîners faisables en semaine avec des produits d'un supermarché Auchan Drive.
-Tu privilégies les produits en promotion et de saison fournis, tu réutilises un même produit dans plusieurs recettes pour limiter le gaspillage et tu respectes strictement les contraintes alimentaires.
+Tu privilégies les produits en promotion et de saison fournis, ainsi que ceux qui créditent la carte fidélité Waaoh (cagnotte), en priorité ceux qui rapportent le plus ; pour une offre « sur le 2ème », prévois une quantité qui justifie deux paquets quand c'est raisonnable. Tu réutilises un même produit dans plusieurs recettes pour limiter le gaspillage et tu respectes strictement les contraintes alimentaires.
 Les quantités d'ingrédients sont des totaux pour la recette, en g, ml ou pièces (pce), cohérents avec le nombre de portions.
 Indique dans kidSteps les indices des étapes que des enfants peuvent réaliser (laver, mélanger, garnir, dresser).`;
 
@@ -24,6 +26,12 @@ function productLine(p: Product): string {
 
 function contextBlock(ctx: WeeklyContext): string {
   const promos = ctx.promos.filter((p) => p.promo?.kind === "price").slice(0, 80);
+  const waaoh = rankWaaohOffers(ctx.promos)
+    .slice(0, 40)
+    .map(
+      ({ product, packs, credit }) =>
+        `${productLine(product)} → ${formatEur(credit)} cagnottés pour ${packs} acheté${packs > 1 ? "s" : ""}`,
+    );
   return [
     `Saison : ${ctx.season}. Produits de saison : ${ctx.seasonalProduce.join(", ")}.`,
     ctx.events.length ? `Événements à venir : ${ctx.events.map((e) => `${e.name} (${e.date})`).join(", ")}.` : "",
@@ -31,6 +39,9 @@ function contextBlock(ctx: WeeklyContext): string {
       ? `Thèmes mis en avant par le magasin cette semaine (ignore ceux qui ne concernent pas les dîners) :\n${ctx.themes.map((t) => `- ${t}`).join("\n")}`
       : "",
     `Promos alimentaires de la semaine :\n${promos.map(productLine).join("\n")}`,
+    waaoh.length
+      ? `Produits qui créditent la carte Waaoh (du plus au moins rémunérateur) :\n${waaoh.join("\n")}`
+      : "",
     ctx.antiGaspi.length ? `Produits anti-gaspi :\n${ctx.antiGaspi.slice(0, 20).map(productLine).join("\n")}` : "",
   ]
     .filter(Boolean)

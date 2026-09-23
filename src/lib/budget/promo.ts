@@ -1,4 +1,5 @@
 import { normalizeText } from "../text";
+import type { Product } from "../types";
 import { parseFrNumber, round2 } from "../units";
 
 export interface PromoEffect {
@@ -37,4 +38,31 @@ export function promoEffect(label: string, unitPrice: number, packs: number): Pr
     }
   }
   return { saved: round2(saved), loyalty: round2(loyalty) };
+}
+
+/** Cagnotte Waaoh d'une offre : nombre de paquets à acheter pour la déclencher et montant crédité ; null sans cagnotte. */
+export function loyaltyOffer(label: string, unitPrice: number): { packs: number; credit: number } | null {
+  for (let packs = 1; packs <= 4; packs++) {
+    const { loyalty } = promoEffect(label, unitPrice, packs);
+    if (loyalty > 0) return { packs, credit: loyalty };
+  }
+  return null;
+}
+
+export interface WaaohOffer {
+  product: Product;
+  /** paquets à acheter pour déclencher la cagnotte */
+  packs: number;
+  /** montant cagnotté pour ces paquets, en € */
+  credit: number;
+}
+
+/** Produits qui créditent la carte Waaoh, du plus au moins rémunérateur. */
+export function rankWaaohOffers(products: Product[]): WaaohOffer[] {
+  return products
+    .flatMap((product) => {
+      const offer = product.promo ? loyaltyOffer(product.promo.label, product.price) : null;
+      return offer ? [{ product, ...offer }] : [];
+    })
+    .sort((a, b) => b.credit - a.credit);
 }

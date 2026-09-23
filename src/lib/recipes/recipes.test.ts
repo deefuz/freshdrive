@@ -61,6 +61,29 @@ describe("buildMenuPrompt", () => {
   });
 });
 
+describe("buildMenuPrompt : carte Waaoh", () => {
+  it("liste les produits qui créditent la carte Waaoh, du plus au moins rémunérateur", () => {
+    const p = buildMenuPrompt(brief, {
+      ...ctx,
+      promos: [
+        makeProduct({ name: "Riz basmati", price: 2, promo: { label: "10% Jour W! cagnottés", kind: "loyalty" } }),
+        makeProduct({ name: "Filets de poulet", price: 6, promo: { label: "50 % cagnottés sur le 2ème", kind: "loyalty" } }),
+        makeProduct({ name: "Potimarron", price: 1.99, promo: { label: "-30%", kind: "price" } }),
+      ],
+    });
+    expect(p).toContain("Potimarron");
+    const waaoh = p.slice(p.indexOf("carte Waaoh"));
+    expect(waaoh).toContain("- Filets de poulet : 6.00 € [50 % cagnottés sur le 2ème] → 3,00 € cagnottés pour 2 achetés");
+    expect(waaoh).toContain("- Riz basmati : 2.00 € [10% Jour W! cagnottés] → 0,20 € cagnottés pour 1 acheté");
+    expect(waaoh.indexOf("Filets de poulet")).toBeLessThan(waaoh.indexOf("Riz basmati"));
+    expect(SYSTEM_PROMPT).toContain("Waaoh");
+  });
+
+  it("n'ajoute pas de section Waaoh sans offre de cagnotte", () => {
+    expect(buildMenuPrompt(brief, ctx)).not.toContain("carte Waaoh");
+  });
+});
+
 describe("buildMenuPrompt : propositions supplémentaires", () => {
   it("demande N nouvelles recettes, différentes de celles déjà proposées", () => {
     const p = buildMenuPrompt(brief, ctx, { count: 3, existingTitles: ["Dahl doux", "Riz sauté"] });

@@ -4,31 +4,28 @@ config({ path: ".env.local" });
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
-import Anthropic from "@anthropic-ai/sdk";
-import { hasStoreSession } from "@/lib/auchan/check";
-import { importChromeSession } from "@/lib/auchan/chrome-cookies";
-import { AuchanConnector } from "@/lib/auchan/connector";
-import { AuchanHttp } from "@/lib/auchan/http";
-import { loadSession } from "@/lib/auchan/session";
-import { chooseSelection, computeBasket, mergeBasketIntoCart, type Basket } from "@/lib/budget/basket";
-import { buildWeeklyContext, isCacheableContext, summarizeContext, type WeeklyContext } from "@/lib/context/build";
-import { createClaudeArbiter } from "@/lib/matching/arbiter";
-import { type IngredientMatch, matchNeeds } from "@/lib/matching/match";
-import { aggregateNeeds } from "@/lib/matching/needs";
-import { fetchOffInfo } from "@/lib/matching/off";
+import { openAuchan } from "@/lib/auchan/open";
+import { previewPush } from "@/lib/cart/push";
+import { summarizeContext } from "@/lib/context/build";
+import { loadWeeklyContext } from "@/lib/context/cache";
+import type { JobContext } from "@/lib/jobs/runner";
+import { selectBackend } from "@/lib/llm/backend";
 import { type Brief, BriefSchema } from "@/lib/recipes/brief";
-import { generateMenu, reviseMenu } from "@/lib/recipes/generate";
 import { buildRequestDocument, parseRecipesFile } from "@/lib/recipes/handoff";
-import type { Recipe } from "@/lib/recipes/schema";
-
-const CONTEXT_CACHE = "data/cache/context.json";
-const DAY_MS = 86_400_000;
+import { type Week, WeekStore } from "@/lib/store/weeks";
+import { type WeekTotals, weekTotals } from "@/lib/week/edit";
+import { runCreateWeek, runPush, type WorkflowDeps } from "@/lib/week/workflows";
 
 const argValue = (name: string) => {
   const i = process.argv.indexOf(name);
   return i >= 0 ? process.argv[i + 1] : undefined;
 };
+const has = (flag: string) => process.argv.includes(flag);
 const step = (label: string) => console.log(`\n▶ ${label}`);
+const cliJob: JobContext = {
+  step,
+  progress: (done, total) => process.stdout.write(`\r  ${done}/${total}`),
+};
 
 function loadBrief(briefPath: string): Brief {
   if (!fs.existsSync(briefPath)) {
@@ -39,29 +36,14 @@ function loadBrief(briefPath: string): Brief {
   return BriefSchema.parse(JSON.parse(fs.readFileSync(briefPath, "utf8")));
 }
 
-async function loadContext(connector: AuchanConnector): Promise<WeeklyContext> {
-  if (fs.existsSync(CONTEXT_CACHE)) {
-    const cached = JSON.parse(fs.readFileSync(CONTEXT_CACHE, "utf8")) as WeeklyContext;
-    if (Date.now() - Date.parse(cached.generatedAt) < DAY_MS && isCacheableContext(cached)) return cached;
-  }
-  const ctx = await buildWeeklyContext(connector);
-  if (isCacheableContext(ctx)) {
-    fs.mkdirSync(path.dirname(CONTEXT_CACHE), { recursive: true });
-    fs.writeFileSync(CONTEXT_CACHE, JSON.stringify(ctx));
-  }
-  return ctx;
-}
-
-function printMenu(recipes: Recipe[], selected: string[]) {
-  for (const r of recipes) {
-    const mark = selected.includes(r.id) ? "✅" : "  ";
+function printWeek(week: Week): WeekTotals {
+  for (const r of week.recipes) {
+    const mark = week.selectedRecipeIds.includes(r.id) ? "✅" : "  ";
     console.log(`${mark} ${r.title} (${r.prepMinutes + r.cookMinutes} min) : ${r.whyThisWeek}`);
   }
-}
-
-function printBasket(basket: Basket, budget: number) {
+  const totals = weekTotals(week);
   console.table(
-    basket.lines.map((l) => ({
+    totals.basket.lines.map((l) => ({
       ingrédient: `${l.name} (${l.quantityNeeded}${l.unit})`,
       produit: `${l.product.brand ? `${l.product.brand} ` : ""}${l.product.name}`,
       paquets: l.packs,
@@ -71,35 +53,30 @@ function printBasket(basket: Basket, budget: number) {
         .join(" · "),
     })),
   );
-  if (basket.missing.length) console.log(`Introuvables : ${basket.missing.join(", ")}`);
-  const status = basket.total <= budget ? "✅" : "⚠ au-dessus du budget";
-  console.log(`Total : ${basket.total} € / budget ${budget} € ${status}`);
+  if (totals.basket.missing.length) console.log(`Introuvables : ${totals.basket.missing.join(", ")}`);
+  const promo = totals.promoSaved ? ` (dont ${totals.promoSaved} € d'économies promo)` : "";
+  const status = totals.overBudget ? "⚠ au-dessus du budget" : "✅";
+  console.log(`Total estimé : ${totals.net} € / budget ${totals.budget} €${promo} ${status}`);
+  return totals;
 }
 
 async function main() {
+  console.log("⚠ Ne lance pas le CLI et l'app web en même temps sur la même semaine.");
+
   const brief = loadBrief(argValue("--brief") ?? "data/brief.json");
-  const withPantry = process.argv.includes("--with-pantry");
   const recipesFile = argValue("--from-recipes");
   const today = new Date().toISOString().slice(0, 10);
-  if (!process.argv.includes("--no-chrome")) {
-    try {
-      const { cookies } = importChromeSession();
-      console.log(`Session Auchan reprise de Chrome (${cookies} cookies)`);
-    } catch (e) {
-      console.log(`⚠ Import depuis Chrome impossible (${(e as Error).message}) : session enregistrée utilisée.`);
-    }
-  }
-  const session = loadSession();
-  const connector = new AuchanConnector(new AuchanHttp(session), session);
-  if (!(await hasStoreSession(connector))) {
-    throw new Error("Auchan ne voit aucun drive : dans Chrome, connecte-toi sur auchan.fr et choisis ton drive, puis relance.");
-  }
+
+  const opened = await openAuchan({ importChrome: !has("--no-chrome") });
+  console.log(opened.source === "chrome" ? "Session Auchan reprise de Chrome" : "Session Auchan enregistrée utilisée");
+  for (const w of opened.warnings) console.log(`⚠ ${w}`);
+  const connector = opened.connector;
 
   step("Contexte de la semaine");
-  const ctx = await loadContext(connector);
+  const ctx = await loadWeeklyContext(connector);
   console.log(summarizeContext(ctx));
 
-  if (process.argv.includes("--prepare")) {
+  if (has("--prepare")) {
     const requestFile = `data/requests/${today}.md`;
     const outputFile = `data/recipes/${today}.json`;
     fs.mkdirSync(path.dirname(requestFile), { recursive: true });
@@ -110,84 +87,66 @@ async function main() {
     return;
   }
 
-  // Mode Claude Code (--from-recipes) : aucun appel à l'API Anthropic.
-  const client = recipesFile ? null : new Anthropic();
+  const backend = selectBackend();
+  console.log(`Claude : ${backend.label}${has("--no-arbiter") ? " (sans arbitrage des produits)" : ""}`);
+  const store = new WeekStore();
+  const deps: WorkflowDeps = {
+    store,
+    backend,
+    openStore: async () => connector,
+    loadContext: async () => ctx,
+    useArbiter: !has("--no-arbiter"),
+  };
+  const opts = { includePantryStaples: has("--with-pantry") };
+
+  const created = store.create(brief);
+  store.update(created.id, (w) => {
+    w.status = "generating";
+    if (recipesFile) w.recipes = parseRecipesFile(fs.readFileSync(recipesFile, "utf8"));
+  });
+  if (recipesFile) step(`Recettes lues depuis ${recipesFile}`);
+  await runCreateWeek(created.id, deps, cliJob, opts);
+  console.log();
+  let week = store.get(created.id)!;
+  let totals = printWeek(week);
+
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   const ask = async (q: string) => (await rl.question(`${q} (o/N) `)).trim().toLowerCase() === "o";
 
-  let recipes: Recipe[];
-  if (recipesFile) {
-    step(`Recettes lues depuis ${recipesFile}`);
-    recipes = parseRecipesFile(fs.readFileSync(recipesFile, "utf8"));
-  } else {
-    step("Génération des recettes (Claude)");
-    recipes = await generateMenu(client!, brief, ctx);
-  }
-
-  const scoreOpts = { preferOrganic: brief.preferOrganic, unprocessed: brief.filters.includes("unprocessed") };
-  const deps = {
-    connector,
-    arbiter: client ? createClaudeArbiter(client) : undefined,
-    novaLookup: async (p: { url: string }) => {
-      const { ean } = await connector.getProductDetails(p.url);
-      return ean ? (await fetchOffInfo(ean)).nova : null;
-    },
-    onProgress: (done: number, total: number) => process.stdout.write(`\r  produits : ${done}/${total}`),
-  };
-
-  const run = async () => {
-    step("Recherche des produits Auchan");
-    const needs = aggregateNeeds(recipes);
-    const matches: IngredientMatch[] = await matchNeeds(needs, scoreOpts, deps);
-    const exclude = withPantry ? new Set<string>() : new Set(needs.filter((n) => n.pantryStaple).map((n) => n.key));
-    const selected = chooseSelection(recipes.map((r) => r.id), matches, brief.dinners, exclude);
-    return { matches, selected, basket: computeBasket(matches, selected, exclude) };
-  };
-
-  let { matches, selected, basket } = await run();
-  console.log();
-  printMenu(recipes, selected);
-  printBasket(basket, brief.budgetEur);
-
-  if (basket.total > brief.budgetEur && !client) {
+  if (totals.overBudget && recipesFile) {
     console.log("⚠ Au-dessus du budget : demande à Claude Code des recettes moins chères, puis relance avec --from-recipes.");
-  } else if (client && basket.total > brief.budgetEur && (await ask("Demander à Claude des recettes moins chères ?"))) {
-    const chosen = recipes.filter((r) => selected.includes(r.id)).map((r) => r.title);
-    recipes = await reviseMenu(
-      client,
+  } else if (totals.overBudget && (await ask("Demander à Claude des recettes moins chères ?"))) {
+    const chosen = week.recipes.filter((r) => week.selectedRecipeIds.includes(r.id)).map((r) => r.title);
+    step(`Révision du menu (${backend.label})`);
+    const recipes = await backend.reviseMenu(
       brief,
       ctx,
-      recipes,
-      `Le panier des recettes retenues (${chosen.join(", ")}) coûte ${basket.total} € pour un budget de ${brief.budgetEur} €. Remplace ou simplifie les recettes les plus chères pour passer sous le budget.`,
+      week.recipes,
+      `Le panier des recettes retenues (${chosen.join(", ")}) coûte ${totals.net} € pour un budget de ${brief.budgetEur} €. Remplace ou simplifie les recettes les plus chères pour passer sous le budget.`,
     );
-    ({ matches, selected, basket } = await run());
+    store.update(week.id, (w) => {
+      w.recipes = recipes;
+      w.matches = [];
+      w.selectedRecipeIds = [];
+      w.overrides = { products: {}, pantry: [] };
+      w.status = "generating";
+    });
+    await runCreateWeek(week.id, deps, cliJob, opts);
     console.log();
-    printMenu(recipes, selected);
-    printBasket(basket, brief.budgetEur);
+    week = store.get(week.id)!;
+    totals = printWeek(week);
   }
+  console.log(`\nSemaine enregistrée : data/weeks/${week.id}.json (visible dans l'app : npm run dev)`);
 
-  const weekFile = `data/weeks/${today}.json`;
-  fs.mkdirSync(path.dirname(weekFile), { recursive: true });
-  fs.writeFileSync(weekFile, JSON.stringify({ brief, context: summarizeContext(ctx), recipes, selected, matches, basket }, null, 2));
-  console.log(`\nSemaine enregistrée : ${weekFile}`);
-
-  if (process.argv.includes("--push")) {
-    const lines = mergeBasketIntoCart(await connector.getCart(), basket.lines);
-    if (await ask(`Ajouter ${lines.length} produits à ton panier Auchan ?`)) {
-      step("Ajout au panier Auchan");
-      const failed: string[] = [];
-      for (const line of lines) {
-        const label = basket.lines.find((l) => l.product.productId === line.productId)?.product.name ?? line.productId;
-        try {
-          const { revised } = await connector.setCartQuantities([line]);
-          for (const r of revised) console.log(`⚠ ${label} : ${r.actual} au lieu de ${r.requested} (stock)`);
-        } catch (e) {
-          failed.push(`${label} (${(e as Error).message})`);
-        }
-      }
-      const cart = await connector.getCart();
-      console.log(`Panier : ${cart.items.length} lignes, ${cart.totalPrice} €`);
-      if (failed.length) console.log(`❌ Échecs : ${failed.join(", ")}`);
+  if (has("--push")) {
+    const { cartLines } = previewPush(await connector.getCart(), totals.basket.lines);
+    if (await ask(`Ajouter ${cartLines.length} produits à ton panier Auchan ?`)) {
+      await runPush(week.id, { store, openStore: async () => connector }, cliJob);
+      const report = store.get(week.id)!.pushReport!;
+      console.log();
+      for (const a of report.adjusted) console.log(`⚠ ${a.name} : ${a.actual} au lieu de ${a.requested} (stock)`);
+      if (report.cartTotal !== null) console.log(`Panier : ${report.cartTotal} €`);
+      if (report.failed.length) console.log(`❌ Échecs : ${report.failed.map((f) => `${f.name} (${f.error})`).join(", ")}`);
       console.log("Finalise ta commande (créneau et paiement) sur https://www.auchan.fr");
     }
   }

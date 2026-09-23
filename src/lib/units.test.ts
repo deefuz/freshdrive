@@ -7,6 +7,12 @@ describe("parseFrNumber", () => {
 
 describe("round2", () => {
   it("arrondit au centime", () => expect(round2(5.985)).toBe(5.99));
+
+  it("arrondit correctement les demi-centimes flottants", () => {
+    expect(round2(35.855)).toBe(35.86);
+    expect(round2(1.005)).toBe(1.01);
+    expect(round2(8.97)).toBe(8.97);
+  });
 });
 
 describe("parsePack", () => {

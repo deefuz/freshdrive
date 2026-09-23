@@ -13,7 +13,7 @@ export function parseFrNumber(s: string): number {
 }
 
 export function round2(n: number): number {
-  return Math.round((n + Number.EPSILON) * 100) / 100;
+  return Number(`${Math.round(Number(`${n}e2`))}e-2`);
 }
 
 export function parsePack(text: string): Quantity | null {

@@ -59,4 +59,9 @@ describe("parseRecipesFile", () => {
   it("refuse des identifiants de recette en double", () => {
     expect(() => parseRecipesFile(JSON.stringify([recipes[0], recipes[0]]))).toThrow(/en double/);
   });
+
+  it("accepte kidSteps (facultatif)", () => {
+    const withKids = [makeRecipe({ id: "k", kidSteps: [0] })];
+    expect(parseRecipesFile(JSON.stringify(withKids))).toEqual(withKids);
+  });
 });

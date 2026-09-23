@@ -2,8 +2,8 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { WeeklyContext } from "../context/build";
 import type { Brief } from "./brief";
-import { buildMenuPrompt, buildRevisePrompt, SYSTEM_PROMPT } from "./prompt";
-import { MenuSchema, type Recipe } from "./schema";
+import { buildMenuPrompt, buildRevisePrompt, buildReviseRecipePrompt, SYSTEM_PROMPT } from "./prompt";
+import { MenuSchema, type Recipe, RecipeSchema } from "./schema";
 
 export const RECIPE_MODEL = "claude-opus-5-5";
 
@@ -45,4 +45,23 @@ export function reviseMenu(
   instruction: string,
 ): Promise<Recipe[]> {
   return askMenu(client, buildRevisePrompt(brief, ctx, recipes, instruction));
+}
+
+export async function reviseRecipe(
+  client: Anthropic,
+  brief: Brief,
+  ctx: WeeklyContext,
+  recipe: Recipe,
+  others: Recipe[],
+  instruction: string,
+): Promise<Recipe> {
+  const response = await client.messages.parse({
+    model: RECIPE_MODEL,
+    max_tokens: 8000,
+    thinking: { type: "adaptive" },
+    output_config: { effort: "high", format: zodOutputFormat(RecipeSchema) },
+    system: SYSTEM_PROMPT,
+    messages: [{ role: "user", content: buildReviseRecipePrompt(brief, ctx, recipe, others, instruction) }],
+  });
+  return { ...unwrapParsed(response), id: recipe.id };
 }

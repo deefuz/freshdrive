@@ -19,6 +19,10 @@ export const RecipeSchema = z.object({
   tags: z.array(z.enum(["kids_friendly", "low_calorie", "vegan", "vegetarian", "unprocessed", "quick"])),
   ingredients: z.array(IngredientSchema),
   steps: z.array(z.string()),
+  kidSteps: z
+    .array(z.number().int())
+    .optional()
+    .describe("indices (0 = première étape) des étapes que des enfants peuvent réaliser : laver, mélanger, garnir, dresser"),
   nutritionPerServing: z.object({ kcal: z.number(), proteinG: z.number(), carbsG: z.number(), fatG: z.number() }),
   whyThisWeek: z.string().describe("pourquoi cette recette cette semaine (promo, saison, événement)"),
 });
@@ -27,3 +31,12 @@ export const MenuSchema = z.object({ recipes: z.array(RecipeSchema) });
 
 export type Ingredient = z.infer<typeof IngredientSchema>;
 export type Recipe = z.infer<typeof RecipeSchema>;
+
+export function assertUniqueRecipeIds(recipes: Recipe[]): Recipe[] {
+  const ids = recipes.map((r) => r.id);
+  const duplicates = ids.filter((id, i) => ids.indexOf(id) !== i);
+  if (duplicates.length) {
+    throw new Error(`Menu : identifiants de recette en double (${[...new Set(duplicates)].join(", ")})`);
+  }
+  return recipes;
+}

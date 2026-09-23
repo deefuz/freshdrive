@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 import { makeProduct, makeRecipe } from "../../../tests/helpers/factories";
 import type { WeeklyContext } from "../context/build";
 import { type Brief, servingsFor } from "./brief";
-import { generateMenu, LlmError, RECIPE_MODEL, reviseMenu } from "./generate";
-import { buildMenuPrompt } from "./prompt";
+import { generateMenu, LlmError, RECIPE_MODEL, reviseMenu, reviseRecipe } from "./generate";
+import { buildMenuPrompt, buildReviseRecipePrompt, SYSTEM_PROMPT } from "./prompt";
 
 const brief: Brief = {
   dinners: 4,
@@ -82,5 +82,45 @@ describe("reviseMenu", () => {
     const content = parse.mock.calls[0][0].messages[0].content as string;
     expect(content).toContain("Lasagnes");
     expect(content).toContain("moins cher");
+  });
+});
+
+describe("SYSTEM_PROMPT", () => {
+  it("demande les étapes réalisables par les enfants", () => {
+    expect(SYSTEM_PROMPT).toContain("kidSteps");
+  });
+});
+
+describe("buildReviseRecipePrompt", () => {
+  it("contient la recette, la consigne, les autres titres et l'identifiant à garder", () => {
+    const recipe = makeRecipe({ id: "curry", title: "Curry de légumes" });
+    const p = buildReviseRecipePrompt(brief, ctx, recipe, [makeRecipe({ title: "Gratin" })], "sans four");
+    expect(p).toContain("Curry de légumes");
+    expect(p).toContain("sans four");
+    expect(p).toContain("Gratin");
+    expect(p).toContain("« curry »");
+    expect(p).toContain("4 portions");
+    expect(p).toContain("Potimarron");
+  });
+});
+
+describe("reviseRecipe", () => {
+  it("renvoie une seule recette et garde son identifiant", async () => {
+    const original = makeRecipe({ id: "curry", title: "Curry" });
+    const { client, parse } = fakeClient({
+      stop_reason: "end_turn",
+      parsed_output: { ...original, id: "autre-id", title: "Curry doux" },
+    });
+    const revised = await reviseRecipe(client, brief, ctx, original, [], "moins épicé");
+    expect(revised).toMatchObject({ id: "curry", title: "Curry doux" });
+    const args = parse.mock.calls[0][0];
+    expect(args.model).toBe(RECIPE_MODEL);
+    expect(args.output_config.format).toBeDefined();
+    expect(args.messages[0].content).toContain("moins épicé");
+  });
+
+  it("lève LlmError sur un refus", async () => {
+    const { client } = fakeClient({ stop_reason: "refusal", parsed_output: null });
+    await expect(reviseRecipe(client, brief, ctx, makeRecipe(), [], "x")).rejects.toBeInstanceOf(LlmError);
   });
 });

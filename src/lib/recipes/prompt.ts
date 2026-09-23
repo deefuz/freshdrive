@@ -13,7 +13,8 @@ const FILTER_LABELS: Record<DietFilter, string> = {
 export const SYSTEM_PROMPT = `Tu es le chef d'un service de box repas familiales, en France.
 Tu composes des dîners faisables en semaine avec des produits d'un supermarché Auchan Drive.
 Tu privilégies les produits en promotion et de saison fournis, tu réutilises un même produit dans plusieurs recettes pour limiter le gaspillage et tu respectes strictement les contraintes alimentaires.
-Les quantités d'ingrédients sont des totaux pour la recette, en g, ml ou pièces (pce), cohérents avec le nombre de portions.`;
+Les quantités d'ingrédients sont des totaux pour la recette, en g, ml ou pièces (pce), cohérents avec le nombre de portions.
+Indique dans kidSteps les indices des étapes que des enfants peuvent réaliser (laver, mélanger, garnir, dresser).`;
 
 function productLine(p: Product): string {
   const pack = p.pack ? ` ${p.pack.value}${p.pack.unit}` : "";
@@ -66,4 +67,25 @@ ${JSON.stringify(recipes)}
 
 Consigne : ${instruction}
 Renvoie le menu complet mis à jour (même nombre de recettes ; garde les identifiants des recettes inchangées).`;
+}
+
+export function buildReviseRecipePrompt(
+  brief: Brief,
+  ctx: WeeklyContext,
+  recipe: Recipe,
+  others: Recipe[],
+  instruction: string,
+): string {
+  const titles = others.map((r) => r.title).join(", ") || "aucune";
+  return `${contextBlock(ctx)}
+
+${briefBlock(brief)}
+
+Autres recettes du menu (garde de la variété et partage des ingrédients avec elles) : ${titles}.
+
+Recette à modifier (JSON) :
+${JSON.stringify(recipe)}
+
+Consigne : ${instruction}
+Renvoie uniquement cette recette mise à jour, pour ${servingsFor(brief)} portions, avec le même identifiant « ${recipe.id} ».`;
 }

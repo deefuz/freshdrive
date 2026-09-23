@@ -21,15 +21,30 @@ export function parsePack(text: string): Quantity | null {
   const multi = t.match(/(\d+)\s*x\s*(\d+(?:[.,]\d+)?)\s*(kg|g|l|cl|ml)\b/);
   if (multi) {
     const u = UNITS[multi[3]];
-    return { value: round2(Number(multi[1]) * parseFrNumber(multi[2]) * u.factor), unit: u.unit };
+    const value = round2(Number(multi[1]) * parseFrNumber(multi[2]) * u.factor);
+    return value === 0 ? null : { value, unit: u.unit };
   }
   const single = t.match(/(\d+(?:[.,]\d+)?)\s*(kg|g|l|cl|ml)\b/);
   if (single) {
     const u = UNITS[single[2]];
-    return { value: round2(parseFrNumber(single[1]) * u.factor), unit: u.unit };
+    const value = round2(parseFrNumber(single[1]) * u.factor);
+    return value === 0 ? null : { value, unit: u.unit };
+  }
+  const environ = t.match(/environ\s+(\d+)(?:\s*-\s*\d+)?\s*(?:fruits?|pieces?|pièces?|legumes?|légumes?)(?![a-zà-ÿ])/);
+  if (environ) {
+    const value = Number(environ[1]);
+    return value === 0 ? null : { value, unit: "pce" };
   }
   const pieces = t.match(/(\d+)\s*(?:pièces?|pieces?|pces?|oeufs|œufs)\b/);
-  if (pieces) return { value: Number(pieces[1]), unit: "pce" };
+  if (pieces) {
+    const value = Number(pieces[1]);
+    return value === 0 ? null : { value, unit: "pce" };
+  }
+  const xOnly = t.match(/x\s*(\d+)\b(?!\s*(?:kg|g|l|cl|ml)\b)/);
+  if (xOnly) {
+    const value = Number(xOnly[1]);
+    return value === 0 ? null : { value, unit: "pce" };
+  }
   return null;
 }
 

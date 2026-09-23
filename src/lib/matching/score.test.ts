@@ -35,6 +35,9 @@ describe("packsNeeded", () => {
   it("marque incertain si les unités ne se comparent pas", () => {
     expect(packsNeeded({ quantity: 400, unit: "g" }, makeProduct({ pack: null, unitPriceUnit: "pce" }))).toEqual({ packs: 1, uncertain: true });
   });
+  it("marque incertain pour une pièce sans conditionnement ni prix à la pièce", () => {
+    expect(packsNeeded({ quantity: 3, unit: "pce" }, makeProduct({ pack: null, unitPriceUnit: "kg" }))).toEqual({ packs: 1, uncertain: true });
+  });
 });
 
 describe("scoreCandidate", () => {

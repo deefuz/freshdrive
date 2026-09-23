@@ -43,6 +43,14 @@ describe("matchNeeds", () => {
     expect(m).toMatchObject({ chosen: null, alternatives: [] });
   });
 
+  it("écarte un produit sans vendeur (pas de bouton panier)", async () => {
+    const noSeller = makeProduct({ name: "Tomates cerises pas chères", price: 0.5, pack: { value: 250, unit: "g" }, sellerId: null });
+    const connector = new FakeConnector({ "tomates cerises": [cheap, noSeller] });
+    const [m] = await matchNeeds([need("tomates cerises", 500)], opts, { connector });
+    expect(m.chosen?.product).toBe(cheap);
+    expect(m.alternatives.map((a) => a.product)).not.toContain(noSeller);
+  });
+
   it("filtre sans produits transformés : écarte un NOVA 4", async () => {
     const ultra = makeProduct({ name: "Sauce tomate", price: 1, pack: { value: 500, unit: "g" } });
     const raw = makeProduct({ name: "Pulpe de tomate", price: 2, pack: { value: 500, unit: "g" } });
@@ -50,6 +58,20 @@ describe("matchNeeds", () => {
     const novaLookup = vi.fn(async (p) => (p === ultra ? 4 : 1));
     const [m] = await matchNeeds([need("sauce tomate", 500)], { preferOrganic: false, unprocessed: true }, { connector, novaLookup });
     expect(m.chosen?.product).toBe(raw);
+  });
+
+  it("une erreur du lookup NOVA n'interrompt pas le matching (NOVA inconnu = accepté)", async () => {
+    const a = makeProduct({ name: "Sauce tomate maison", price: 1, pack: { value: 500, unit: "g" } });
+    const connector = new FakeConnector({ "sauce tomate": [a] });
+    const novaLookup = vi.fn(async () => {
+      throw new Error("OFF indisponible");
+    });
+    const [m] = await matchNeeds(
+      [need("sauce tomate", 500)],
+      { preferOrganic: false, unprocessed: true },
+      { connector, novaLookup },
+    );
+    expect(m.chosen?.product).toBe(a);
   });
 });
 

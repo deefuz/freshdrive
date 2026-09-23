@@ -48,7 +48,7 @@ describe("parseProductCards", () => {
     expect(products[2]).toMatchObject({
       name: "Tomates rondes en grappe",
       brand: null,
-      pack: null,
+      pack: { value: 3, unit: "pce" },
       unitPrice: 3.29,
       unitPriceUnit: "pce",
       sellerId: null,

@@ -28,6 +28,7 @@ export async function matchNeeds(needs: IngredientNeed[], opts: ScoreOptions, de
     ranked.push(
       results
         .filter((p) => p.stock !== 0)
+        .filter((p) => p.sellerId !== null)
         .filter((p) => isRelevant(need.searchQuery, p.name) || isRelevant(need.name, p.name))
         .slice(0, MAX_CANDIDATES)
         .map((p) => scoreCandidate(need, p, opts))
@@ -64,7 +65,15 @@ export async function matchNeeds(needs: IngredientNeed[], opts: ScoreOptions, de
       const ordered = [chosen, ...cands.filter((c) => c !== chosen)].slice(0, MAX_NOVA_CHECKS);
       chosen = null;
       for (const c of ordered) {
-        if ((await deps.novaLookup(c.product)) !== 4) {
+        let nova: number | null = null;
+        if (c.product.url) {
+          try {
+            nova = await deps.novaLookup(c.product);
+          } catch {
+            nova = null;
+          }
+        }
+        if (nova !== 4) {
           chosen = c;
           break;
         }

@@ -16,4 +16,8 @@ describe("isRelevant", () => {
     expect(isRelevant("tomates cerises", "AUCHAN BIO Tomates cerises rouges")).toBe(true);
   });
   it("faux sinon", () => expect(isRelevant("courgette", "Tomates rondes")).toBe(false));
+  it("gère les ligatures œ/æ (NFD ne les décompose pas)", () => {
+    expect(isRelevant("œufs", "Oeufs frais x12")).toBe(true);
+    expect(isRelevant("oeufs", "Œufs frais")).toBe(true);
+  });
 });

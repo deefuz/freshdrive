@@ -8,9 +8,8 @@ import Anthropic from "@anthropic-ai/sdk";
 import { AuchanConnector } from "@/lib/auchan/connector";
 import { AuchanHttp } from "@/lib/auchan/http";
 import { loadSession } from "@/lib/auchan/session";
-import { basketToCartLines, chooseSelection, computeBasket, type Basket } from "@/lib/budget/basket";
-import { mergeWithCart } from "@/lib/cart/merge";
-import { buildWeeklyContext, summarizeContext, type WeeklyContext } from "@/lib/context/build";
+import { chooseSelection, computeBasket, mergeBasketIntoCart, type Basket } from "@/lib/budget/basket";
+import { buildWeeklyContext, isCacheableContext, summarizeContext, type WeeklyContext } from "@/lib/context/build";
 import { createClaudeArbiter } from "@/lib/matching/arbiter";
 import { type IngredientMatch, matchNeeds } from "@/lib/matching/match";
 import { aggregateNeeds } from "@/lib/matching/needs";
@@ -40,11 +39,13 @@ function loadBrief(briefPath: string): Brief {
 async function loadContext(connector: AuchanConnector): Promise<WeeklyContext> {
   if (fs.existsSync(CONTEXT_CACHE)) {
     const cached = JSON.parse(fs.readFileSync(CONTEXT_CACHE, "utf8")) as WeeklyContext;
-    if (Date.now() - Date.parse(cached.generatedAt) < DAY_MS) return cached;
+    if (Date.now() - Date.parse(cached.generatedAt) < DAY_MS && isCacheableContext(cached)) return cached;
   }
   const ctx = await buildWeeklyContext(connector);
-  fs.mkdirSync(path.dirname(CONTEXT_CACHE), { recursive: true });
-  fs.writeFileSync(CONTEXT_CACHE, JSON.stringify(ctx));
+  if (isCacheableContext(ctx)) {
+    fs.mkdirSync(path.dirname(CONTEXT_CACHE), { recursive: true });
+    fs.writeFileSync(CONTEXT_CACHE, JSON.stringify(ctx));
+  }
   return ctx;
 }
 
@@ -133,23 +134,25 @@ async function main() {
   fs.writeFileSync(weekFile, JSON.stringify({ brief, context: summarizeContext(ctx), recipes, selected, matches, basket }, null, 2));
   console.log(`\nSemaine enregistrée : ${weekFile}`);
 
-  if (process.argv.includes("--push") && (await ask(`Ajouter ${basket.lines.length} produits à ton panier Auchan ?`))) {
-    step("Ajout au panier Auchan");
-    const lines = mergeWithCart(await connector.getCart(), basketToCartLines(basket.lines));
-    const failed: string[] = [];
-    for (const line of lines) {
-      const label = basket.lines.find((l) => l.product.productId === line.productId)?.product.name ?? line.productId;
-      try {
-        const { revised } = await connector.setCartQuantities([line]);
-        for (const r of revised) console.log(`⚠ ${label} : ${r.actual} au lieu de ${r.requested} (stock)`);
-      } catch (e) {
-        failed.push(`${label} (${(e as Error).message})`);
+  if (process.argv.includes("--push")) {
+    const lines = mergeBasketIntoCart(await connector.getCart(), basket.lines);
+    if (await ask(`Ajouter ${lines.length} produits à ton panier Auchan ?`)) {
+      step("Ajout au panier Auchan");
+      const failed: string[] = [];
+      for (const line of lines) {
+        const label = basket.lines.find((l) => l.product.productId === line.productId)?.product.name ?? line.productId;
+        try {
+          const { revised } = await connector.setCartQuantities([line]);
+          for (const r of revised) console.log(`⚠ ${label} : ${r.actual} au lieu de ${r.requested} (stock)`);
+        } catch (e) {
+          failed.push(`${label} (${(e as Error).message})`);
+        }
       }
+      const cart = await connector.getCart();
+      console.log(`Panier : ${cart.items.length} lignes, ${cart.totalPrice} €`);
+      if (failed.length) console.log(`❌ Échecs : ${failed.join(", ")}`);
+      console.log("Finalise ta commande (créneau et paiement) sur https://www.auchan.fr");
     }
-    const cart = await connector.getCart();
-    console.log(`Panier : ${cart.items.length} lignes, ${cart.totalPrice} €`);
-    if (failed.length) console.log(`❌ Échecs : ${failed.join(", ")}`);
-    console.log("Finalise ta commande (créneau et paiement) sur https://www.auchan.fr");
   }
   rl.close();
 }

@@ -1,6 +1,7 @@
+import { mergeWithCart } from "../cart/merge";
 import type { IngredientMatch } from "../matching/match";
 import { packsNeeded } from "../matching/score";
-import type { CartLine, Product, QtyUnit } from "../types";
+import type { Cart, CartLine, Product, QtyUnit } from "../types";
 import { round2 } from "../units";
 
 export interface BasketLine {
@@ -72,4 +73,10 @@ export function basketToCartLines(lines: BasketLine[]): CartLine[] {
       quantity: l.packs,
     };
   });
+}
+
+/** Lignes réellement envoyées au panier Auchan (fusionnées avec le panier existant et entre elles si plusieurs
+ * lignes du panier pointent vers le même produit) : c'est ce compte qu'il faut afficher avant de demander confirmation. */
+export function mergeBasketIntoCart(cart: Cart, lines: BasketLine[]): CartLine[] {
+  return mergeWithCart(cart, basketToCartLines(lines));
 }

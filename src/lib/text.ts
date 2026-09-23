@@ -1,7 +1,13 @@
 const STOPWORDS = new Set(["des", "les", "aux", "avec", "pour", "sans", "une", "par", "sur"]);
 
 export function normalizeText(s: string): string {
-  return s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  return s
+    .toLowerCase()
+    .replace(/œ/g, "oe")
+    .replace(/æ/g, "ae")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .trim();
 }
 
 export function tokens(s: string): string[] {

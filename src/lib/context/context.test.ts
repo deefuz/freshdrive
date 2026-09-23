@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { makeProduct } from "../../../tests/helpers/factories";
 import { FakeConnector } from "../../../tests/helpers/fake-connector";
-import { buildWeeklyContext, summarizeContext } from "./build";
+import { buildWeeklyContext, isCacheableContext, summarizeContext, type WeeklyContext } from "./build";
 import { easterSunday, upcomingEvents } from "./events";
 import { getSeason, seasonalProduceFor } from "./season";
 
@@ -46,5 +46,24 @@ describe("buildWeeklyContext", () => {
     expect(ctx.events.map((e) => e.name)).toEqual(["Halloween"]);
     expect(ctx.promos).toEqual([promo]);
     expect(summarizeContext(ctx)).toBe("1 promos · 0 anti-gaspi · thèmes : saveurs d asie · événements : Halloween");
+  });
+});
+
+describe("isCacheableContext", () => {
+  const base: Omit<WeeklyContext, "promos"> = {
+    generatedAt: new Date(2026, 9, 20).toISOString(),
+    season: "automne",
+    seasonalProduce: [],
+    events: [],
+    antiGaspi: [],
+    themes: [],
+  };
+
+  it("faux si aucune promo (session probablement expirée, ne pas écrire/réutiliser le cache)", () => {
+    expect(isCacheableContext({ ...base, promos: [] })).toBe(false);
+  });
+
+  it("vrai si au moins une promo", () => {
+    expect(isCacheableContext({ ...base, promos: [makeProduct({ name: "Potimarron" })] })).toBe(true);
   });
 });

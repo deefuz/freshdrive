@@ -75,6 +75,7 @@ export class AuchanHttp implements HttpClient {
     });
     if (res.status === 401 || res.status === 403) throw new SessionExpiredError();
     if (!res.ok) throw new AuchanHttpError(res.status, path);
+    if (res.redirected && /login|connexion|identification|auth/i.test(res.url)) throw new SessionExpiredError();
     return res;
   }
 
@@ -89,6 +90,7 @@ export class AuchanHttp implements HttpClient {
       { method: "GET" },
       { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
     );
+    if (!(res.headers.get("content-type") ?? "").includes("json")) throw new SessionExpiredError();
     return (await res.json()) as T;
   }
 

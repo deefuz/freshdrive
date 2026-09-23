@@ -22,14 +22,16 @@ describe("parsePack", () => {
     ["Lait demi-écrémé 6x1L 1,70€ / l", { value: 6000, unit: "ml" }],
     ["Crème 20cl", { value: 200, unit: "ml" }],
     ["Oeufs plein air 6 pièces 0,35€ / pce", { value: 6, unit: "pce" }],
+    ["Tomates rondes en grappe France environ 3-4 fruits 3,29€ / pce", { value: 3, unit: "pce" }],
+    ["Oeufs frais x12", { value: 12, unit: "pce" }],
   ])("%s", (text, expected) => expect(parsePack(text)).toEqual(expected));
-
-  it("renvoie null sans conditionnement lisible", () => {
-    expect(parsePack("Tomates rondes en grappe France environ 3-4 fruits 3,29€ / pce")).toBeNull();
-  });
 
   it("ne prend pas un multipack sans unité (8x2 barres)", () => {
     expect(parsePack("KINDER Bueno 340g 8x2 barres")).toEqual({ value: 340, unit: "g" });
+  });
+
+  it("renvoie null si la quantité vaut 0", () => {
+    expect(parsePack("0g")).toBeNull();
   });
 });
 

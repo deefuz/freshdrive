@@ -52,4 +52,18 @@ describe("AuchanHttp", () => {
     const http = new AuchanHttp(session, { fetchFn: async () => new Response("", { status: 500 }), minIntervalMs: 0 });
     await expect(http.getText("/x")).rejects.toBeInstanceOf(AuchanHttpError);
   });
+
+  it("lève SessionExpiredError si redirigé vers une page de connexion", async () => {
+    const res = new Response("<html/>", { status: 200 });
+    Object.defineProperty(res, "redirected", { value: true });
+    Object.defineProperty(res, "url", { value: "https://www.auchan.fr/identification" });
+    const http = new AuchanHttp(session, { fetchFn: async () => res, minIntervalMs: 0 });
+    await expect(http.getText("/cart")).rejects.toBeInstanceOf(SessionExpiredError);
+  });
+
+  it("lève SessionExpiredError si getJson reçoit une réponse non-JSON (page de connexion)", async () => {
+    const res = new Response("<html/>", { status: 200, headers: { "content-type": "text/html; charset=utf-8" } });
+    const http = new AuchanHttp(session, { fetchFn: async () => res, minIntervalMs: 0 });
+    await expect(http.getJson("/cart")).rejects.toBeInstanceOf(SessionExpiredError);
+  });
 });

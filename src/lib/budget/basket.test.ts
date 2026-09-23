@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { makeProduct } from "../../../tests/helpers/factories";
 import type { IngredientMatch } from "../matching/match";
 import { scoreCandidate } from "../matching/score";
-import { basketToCartLines, chooseSelection, computeBasket } from "./basket";
+import type { Cart } from "../types";
+import { basketToCartLines, chooseSelection, computeBasket, mergeBasketIntoCart } from "./basket";
 
 const opts = { preferOrganic: false, unprocessed: false };
 
@@ -50,5 +51,19 @@ describe("basketToCartLines", () => {
     expect(basketToCartLines([line])).toEqual([
       { productId: line.product.productId, offerId: line.product.offerId, sellerId: "seller-1", sellerType: "GROCERY", quantity: 2 },
     ]);
+  });
+});
+
+describe("mergeBasketIntoCart", () => {
+  it("fusionne en une seule ligne quand deux lignes du panier ciblent le même produit (compte réel avant confirmation)", () => {
+    const [line] = computeBasket([match("tomates", { a: 400 }, 2)], ["a"]).lines;
+    const cart: Cart = {
+      id: "cart-1",
+      items: [{ productId: line.product.productId, offerId: line.product.offerId, quantity: 1 }],
+      totalPrice: 0,
+    };
+    const merged = mergeBasketIntoCart(cart, [line, line]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0].quantity).toBe(line.packs * 2 + 1);
   });
 });

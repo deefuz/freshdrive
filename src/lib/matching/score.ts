@@ -22,7 +22,8 @@ export function packsNeeded(need: Need, product: Product): { packs: number; unce
     return { packs: Math.max(1, Math.ceil(need.quantity / product.pack.value - 1e-9)), uncertain: false };
   }
   if (need.unit === "pce" && !product.pack) {
-    return { packs: Math.max(1, Math.ceil(need.quantity)), uncertain: false };
+    if (product.unitPriceUnit === "pce") return { packs: Math.max(1, Math.ceil(need.quantity)), uncertain: false };
+    return { packs: 1, uncertain: true };
   }
   return { packs: 1, uncertain: true };
 }

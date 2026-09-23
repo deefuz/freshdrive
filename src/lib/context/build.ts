@@ -25,6 +25,12 @@ export async function buildWeeklyContext(connector: StoreConnector, now: Date = 
   };
 }
 
+/** Faux si le contexte n'a aucune promo : signe probable d'une session Auchan expirée (page vide/de connexion)
+ * plutôt qu'un vrai magasin sans promo. Un tel contexte ne doit ni être mis en cache, ni être réutilisé. */
+export function isCacheableContext(ctx: WeeklyContext): boolean {
+  return ctx.promos.length > 0;
+}
+
 export function summarizeContext(ctx: WeeklyContext): string {
   const parts = [`${ctx.promos.length} promos`, `${ctx.antiGaspi.length} anti-gaspi`];
   if (ctx.themes.length) parts.push(`thèmes : ${ctx.themes.join(", ")}`);

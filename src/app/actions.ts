@@ -62,3 +62,7 @@ export async function reviseRecipeAction(
     getApp().startReviseRecipe(String(weekId), String(recipeId), String(formData.get("instruction") ?? "")),
   );
 }
+
+export async function confirmPushAction(weekId: string): Promise<ActionResult> {
+  return attempt(() => getApp().startPush(String(weekId)));
+}

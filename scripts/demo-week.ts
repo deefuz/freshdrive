@@ -65,5 +65,5 @@ const week = makeWeek({
 });
 
 new WeekStore().save(week);
-console.log("Semaine de démonstration : http://127.0.0.1:3000/semaines/2000-01-01-1");
+console.log("Semaine de démonstration : http://127.0.0.1:3141/semaines/2000-01-01-1");
 console.log("À supprimer ensuite : rm data/weeks/2000-01-01-1.json");

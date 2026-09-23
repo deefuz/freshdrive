@@ -9,7 +9,7 @@ Déroulé d'une semaine sans clé API :
    - écrire `data/recipes/<date>.json` au format `{ "recipes": [...] }`, conforme au schéma JSON du fichier. Ce schéma est vérifié par `parseRecipesFile` (`src/lib/recipes/handoff.ts`) ;
    - chaque ingrédient a un `searchQuery` court (1 à 3 mots, générique, comme dans le moteur de recherche Auchan). Les quantités sont des totaux pour la recette, en `g`, `ml` ou `pce`. Mettre `pantryStaple: true` pour les basiques de placard ;
    - les identifiants de recette sont uniques, en kebab-case.
-3. L'utilisateur lance ensuite `npm run week -- --from-recipes data/recipes/<date>.json` (ajouter `--push` pour remplir le panier). Le choix des produits est vérifié par un appel groupé à `claude -p` (sauter avec `--no-arbiter`). La semaine est enregistrée dans `data/weeks/<id>.json` et visible dans l'app (`npm run dev`, puis http://127.0.0.1:3000).
+3. L'utilisateur lance ensuite `npm run week -- --from-recipes data/recipes/<date>.json` (ajouter `--push` pour remplir le panier). Le choix des produits est vérifié par un appel groupé à `claude -p` (sauter avec `--no-arbiter`). La semaine est enregistrée dans `data/weeks/<id>.json` et visible dans l'app (`npm run dev`, puis http://127.0.0.1:3141).
 
 Si le panier dépasse le budget, l'utilisateur demandera des recettes moins chères : réécrire le même fichier JSON.
 

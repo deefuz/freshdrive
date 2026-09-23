@@ -73,6 +73,18 @@ describe("matchNeeds", () => {
     );
     expect(m.chosen?.product).toBe(a);
   });
+
+  it("préfère le produit brut à une forme transformée ou une autre variété moins chère", async () => {
+    const frozen = makeProduct({ name: "Courgettes en rondelles", price: 1.29, pack: { value: 500, unit: "g" } });
+    const fresh = makeProduct({ name: "Courgettes", price: 2.2, pack: { value: 1000, unit: "g" } });
+    const chevre = makeProduct({ name: "Fromage frais de chèvre", price: 1.5, pack: { value: 200, unit: "g" } });
+    const nature = makeProduct({ name: "Fromage frais nature", price: 1.9, pack: { value: 200, unit: "g" } });
+    const connector = new FakeConnector({ courgette: [frozen, fresh], "fromage frais": [chevre, nature] });
+    const fromage: IngredientNeed = { ...need("fromage frais", 200), name: "fromage frais nature" };
+    const [c, f] = await matchNeeds([need("courgette", 400), fromage], opts, { connector });
+    expect(c.chosen?.product).toBe(fresh);
+    expect(f.chosen?.product).toBe(nature);
+  });
 });
 
 describe("fetchOffInfo", () => {

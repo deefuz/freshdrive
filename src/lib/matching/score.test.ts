@@ -68,4 +68,11 @@ describe("scoreCandidate", () => {
     expect(uncertain.uncertainQuantity).toBe(true);
     expect(uncertain.score).toBeCloseTo(3.9);
   });
+
+  it("applique la pénalité de pertinence quand le besoin porte un nom", () => {
+    const named = { quantity: 500, unit: "g" as const, name: "courgette", searchQuery: "courgette" };
+    const frozen = makeProduct({ name: "Courgettes en rondelles", price: 2, pack: { value: 500, unit: "g" } });
+    expect(scoreCandidate(named, frozen, opts).score).toBeCloseTo(4);
+    expect(scoreCandidate({ quantity: 500, unit: "g" }, frozen, opts).score).toBeCloseTo(2);
+  });
 });

@@ -1,5 +1,6 @@
 import type { Product, QtyUnit } from "../types";
 import { round2 } from "../units";
+import { matchPenalty } from "./relevance";
 
 export interface ScoreOptions {
   preferOrganic: boolean;
@@ -15,7 +16,7 @@ export interface MatchCandidate {
   uncertainQuantity: boolean;
 }
 
-type Need = { quantity: number; unit: QtyUnit };
+type Need = { quantity: number; unit: QtyUnit; name?: string; searchQuery?: string };
 
 export function packsNeeded(need: Need, product: Product): { packs: number; uncertain: boolean } {
   if (product.pack && product.pack.unit === need.unit) {
@@ -40,5 +41,8 @@ export function scoreCandidate(need: Need, product: Product, opts: ScoreOptions)
   if (product.promo?.kind === "price") score *= 0.9;
   if (product.promo?.kind === "loyalty") score *= 0.97;
   if (uncertain) score *= 1.3;
+  if (need.name !== undefined && need.searchQuery !== undefined) {
+    score *= matchPenalty({ name: need.name, searchQuery: need.searchQuery }, product.name);
+  }
   return { product, packs, cost, score, uncertainQuantity: uncertain };
 }

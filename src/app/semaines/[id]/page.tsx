@@ -11,6 +11,7 @@ import { ADD_RECIPES_COUNT, MAX_WEEK_RECIPES } from "@/lib/app/service";
 import { formatWeekDate, JOB_LABELS } from "@/lib/format";
 import { isPrintable } from "@/lib/print/sheet";
 import { productRows, weekTotals } from "@/lib/week/edit";
+import { visualUrl } from "@/lib/visuals";
 import { weekView } from "@/lib/week/view";
 import { BudgetBar } from "./_components/budget-bar";
 import { ProductList } from "./_components/product-list";
@@ -123,6 +124,7 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
               full={full}
               pushed={week.status === "pushed"}
               favorite={app.favorites.has(r.title)}
+              visual={visualUrl(r.title)}
             />
           ))}
         </div>

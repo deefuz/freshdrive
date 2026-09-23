@@ -10,6 +10,7 @@ import { readCachedContext } from "@/lib/context/cache";
 import { formatEur, formatWeekDate, JOB_LABELS, TAG_LABELS, weekStatusLabel } from "@/lib/format";
 import { isPrintable } from "@/lib/print/sheet";
 import type { Week } from "@/lib/store/weeks";
+import { visualUrl } from "@/lib/visuals";
 import { weekTotals } from "@/lib/week/edit";
 
 /** Couleur du badge de statut : bleu envoyée, citron prête, tomate envoi interrompu, miel sinon. */
@@ -123,9 +124,15 @@ export default async function HomePage() {
           </p>
         ) : (
           <ul className={`${card} divide-y divide-oat-line`}>
-            {favorites.map((f) => (
+            {favorites.map((f) => {
+              const visual = visualUrl(f.recipe.title);
+              return (
                 <li key={f.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-4">
+                    {visual && (
+                      // eslint-disable-next-line @next/next/no-img-element -- SVG local servi par une route
+                      <img src={visual} alt="" className="aspect-[16/10] w-20 shrink-0 rounded object-cover" />
+                    )}
                     <div>
                       <p className="font-medium">
                         <span className="mr-1.5 text-basil" aria-hidden="true">
@@ -147,7 +154,8 @@ export default async function HomePage() {
                     <ActionButton action={removeFavoriteAction.bind(null, f.id)} label="Retirer" pendingLabel="Retrait…" />
                   </div>
                 </li>
-            ))}
+              );
+            })}
           </ul>
         )}
       </section>

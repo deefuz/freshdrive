@@ -16,3 +16,5 @@ Si le panier dépasse le budget, l'utilisateur demandera des recettes moins chè
 Le CLI et l'app web sont deux processus séparés : ils ne partagent ni la garde-fou « une tâche à la fois » ni la porte des 350 ms vers auchan.fr. Ne lance pas le CLI et l'app web en même temps sur la même semaine.
 
 Impression : `/semaines/<id>/imprimer` (fiches recettes et liste de courses), puis « Télécharger le PDF ». Le PDF est rendu par le Chromium de Playwright (`npx playwright install chromium` s'il manque), qui charge la page sur http://127.0.0.1:3141 : l'app doit tourner sur ce port.
+
+Visuels des recettes : sur demande (« dessine les visuels de la semaine … »), dessiner à la main un SVG par recette dans `data/visuels/<slug-du-titre>.svg` en suivant « Illustrations de recettes » de DESIGN.md (`visualSlug` dans `src/lib/visuals.ts` donne le nom du fichier). L'app les affiche automatiquement ; une recette sans fichier s'affiche sans image.

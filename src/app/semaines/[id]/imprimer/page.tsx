@@ -14,11 +14,17 @@ import {
   printQuery,
   type SearchParams,
 } from "@/lib/print/sheet";
+import { visualUrl } from "@/lib/visuals";
 import { PrintButton } from "./print-button";
 
 function RecipeSheet({ recipe, first }: { recipe: PrintRecipe; first: boolean }) {
+  const visual = visualUrl(recipe.title);
   return (
     <article className={`space-y-3 ${first ? "" : "print:break-before-page"}`}>
+      {visual && (
+        // eslint-disable-next-line @next/next/no-img-element -- SVG local servi par une route
+        <img src={visual} alt="" className="aspect-[16/6] w-full rounded object-cover print:aspect-[16/5]" />
+      )}
       <header className="border-b-2 border-charcoal pb-3">
         <h2 className="text-[2rem] leading-[1.1] tracking-[-0.025em]">{recipe.title}</h2>
         {recipe.summary && <p className="mt-1 text-graphite">{recipe.summary}</p>}

@@ -255,6 +255,15 @@ Francs et pleins, comme un bouton « Commander ».
 ### Navigation
 - Barre haute crème, logo citron + « MY FRESH » en Bricolage 800 capitales sur deux lignes, lien « Mes semaines » en Roboto 500, bouton secondaire « Nouvelle semaine ». Masquée à l'impression.
 
+### Illustrations de recettes (signature)
+Chaque recette a une illustration SVG dessinée à la main, `data/visuels/<slug-du-titre>.svg` (slug : titre en minuscules sans accents, `œ` → `oe`, tout le reste remplacé par des tirets). Elle occupe le haut de la carte recette (recadrée en 16:7), la miniature des favoris et le bandeau des fiches imprimées.
+- **Cadre :** `viewBox="0 0 640 400"`, `width="640" height="400"`, vue de dessus, plat centré ou légèrement décalé, rien d'important à moins de 40px des bords (recadrage 16:7 sur les cartes, 16:6 en aperçu et 16:5 à l'impression).
+- **Nappe :** un aplat doux (#dfe6ea, #dce6ee, #dfe8cf, #efe9de, #f1ddd3, #f1e6d6) avec 3 ou 4 fines rayures un ton plus foncé. Varier la nappe d'une recette à l'autre dans une même semaine.
+- **Accessoires :** une serviette (vichy tomate, rayures myrtille, rayures citron ou carreaux miel, à 35-55 % d'opacité sur fond clair) coupée par un bord, et des couverts gris (#b9bec2, #c9cdd0) ou des baguettes bois.
+- **Vaisselle :** assiette #f4efe4 et fond #fbf8f1 ; ombre = même forme décalée de (8, 10), anthracite à 10 %.
+- **Aliments :** formes plates sans contour, 2 à 3 tons par aliment (base, ombre, reflet), petites touches d'herbes vertes (#4f8a2f, #3f7a33). Les ingrédients principaux du titre doivent être reconnaissables à la taille d'une carte.
+- **Interdits :** dégradés, contours noirs, texte, visages ou personnages, photoréalisme.
+
 ### Budget bar (signature)
 - Bandeau avoine collant en haut de la semaine : total en Bricolage 800 (basilic sous le budget, tomate au-dessus), jauge citron sur piste blanc cassé, économies promos en basilic, action principale anthracite à droite. Rappelle la barre « voir nos prix » de HelloFresh.
 

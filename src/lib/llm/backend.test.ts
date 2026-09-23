@@ -45,6 +45,14 @@ describe("createClaudeCodeBackend", () => {
     expect(schemaOf(exec).properties.recipes).toBeDefined();
   });
 
+  it("generateMenu transmet les recettes à éviter (même prompt que l'API)", async () => {
+    const exec = fakeExec({ recipes: [] });
+    await createClaudeCodeBackend({ exec }).generateMenu(brief, ctx, { avoidTitles: ["Curry de lentilles", "Tacos"] });
+    expect(promptOf(exec)).toContain(
+      "à éviter (ni la même recette, ni une variante très proche) : Curry de lentilles ; Tacos.",
+    );
+  });
+
   it("generateMenu refuse des identifiants de recette en double", async () => {
     const exec = fakeExec({ recipes: [makeRecipe({ id: "a" }), makeRecipe({ id: "a" })] });
     await expect(createClaudeCodeBackend({ exec }).generateMenu(brief, ctx)).rejects.toThrow(/en double/);

@@ -13,6 +13,7 @@ import { LlmError } from "../recipes/generate";
 import { type PushReport, WeekNotFoundError, type Week, type WeekStore } from "../store/weeks";
 import type { Product, StoreConnector } from "../types";
 import { initialOverrides, reconcileOverrides, weekTotals } from "./edit";
+import { recentSelectedTitles } from "./history";
 
 export interface WorkflowDeps {
   store: WeekStore;
@@ -113,7 +114,9 @@ export async function runCreateWeek(
     let recipes = week.recipes;
     if (!recipes.length) {
       job.step(`Génération des recettes (${deps.backend.label})`);
-      recipes = await deps.backend.generateMenu(week.brief, ctx);
+      recipes = await deps.backend.generateMenu(week.brief, ctx, {
+        avoidTitles: recentSelectedTitles(deps.store.list(), weekId),
+      });
       // enregistrées tout de suite : une relance après un échec ne rappelle pas Claude
       deps.store.update(weekId, (w) => {
         w.recipes = recipes;

@@ -50,12 +50,25 @@ function briefBlock(brief: Brief): string {
     .join("\n");
 }
 
-export function buildMenuPrompt(brief: Brief, ctx: WeeklyContext): string {
+export interface MenuPromptOptions {
+  /** titres des recettes retenues ces dernières semaines, à ne pas reproposer */
+  avoidTitles?: string[];
+}
+
+function menuOptionsBlock(options: MenuPromptOptions): string {
+  const avoid = options.avoidTitles ?? [];
+  return avoid.length
+    ? `Recettes servies ces dernières semaines, à éviter (ni la même recette, ni une variante très proche) : ${avoid.join(" ; ")}.`
+    : "";
+}
+
+export function buildMenuPrompt(brief: Brief, ctx: WeeklyContext, options: MenuPromptOptions = {}): string {
   const count = brief.dinners + 2;
+  const extra = menuOptionsBlock(options);
   return `${contextBlock(ctx)}
 
 ${briefBlock(brief)}
-
+${extra ? `\n${extra}\n` : ""}
 Propose ${count} recettes de dîner variées (${brief.dinners} seront retenues, les autres servent d'alternatives), chacune pour ${servingsFor(brief)} portions.`;
 }
 

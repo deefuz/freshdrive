@@ -61,6 +61,20 @@ describe("buildMenuPrompt", () => {
   });
 });
 
+describe("buildMenuPrompt : recettes à éviter", () => {
+  it("liste les recettes des dernières semaines à ne pas reproposer", () => {
+    const p = buildMenuPrompt(brief, ctx, { avoidTitles: ["Curry de lentilles", "Gratin, version douce"] });
+    expect(p).toContain(
+      "Recettes servies ces dernières semaines, à éviter (ni la même recette, ni une variante très proche) : Curry de lentilles ; Gratin, version douce.",
+    );
+  });
+
+  it("rien à éviter : pas de ligne", () => {
+    expect(buildMenuPrompt(brief, ctx, { avoidTitles: [] })).not.toContain("à éviter");
+    expect(buildMenuPrompt(brief, ctx)).not.toContain("à éviter");
+  });
+});
+
 describe("generateMenu", () => {
   it("appelle Claude avec le bon modèle et un format structuré", async () => {
     const recipes = [makeRecipe()];
@@ -71,6 +85,12 @@ describe("generateMenu", () => {
     expect(args.thinking).toEqual({ type: "adaptive" });
     expect(args.output_config.effort).toBe("high");
     expect(args.output_config.format).toBeDefined();
+  });
+
+  it("transmet les recettes à éviter dans le prompt (API)", async () => {
+    const { client, parse } = fakeClient({ stop_reason: "end_turn", parsed_output: { recipes: [] } });
+    await generateMenu(client, brief, ctx, { avoidTitles: ["Curry de lentilles"] });
+    expect(parse.mock.calls[0][0].messages[0].content).toContain("à éviter (ni la même recette, ni une variante très proche) : Curry de lentilles.");
   });
 
   it("lève LlmError sur un refus", async () => {

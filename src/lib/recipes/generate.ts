@@ -2,7 +2,13 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { WeeklyContext } from "../context/build";
 import type { Brief } from "./brief";
-import { buildMenuPrompt, buildRevisePrompt, buildReviseRecipePrompt, SYSTEM_PROMPT } from "./prompt";
+import {
+  buildMenuPrompt,
+  buildRevisePrompt,
+  buildReviseRecipePrompt,
+  type MenuPromptOptions,
+  SYSTEM_PROMPT,
+} from "./prompt";
 import { MenuSchema, type Recipe, RecipeSchema } from "./schema";
 
 export const RECIPE_MODEL = "claude-opus-5-5";
@@ -33,8 +39,13 @@ async function askMenu(client: Anthropic, prompt: string): Promise<Recipe[]> {
   return unwrapParsed(response).recipes;
 }
 
-export function generateMenu(client: Anthropic, brief: Brief, ctx: WeeklyContext): Promise<Recipe[]> {
-  return askMenu(client, buildMenuPrompt(brief, ctx));
+export function generateMenu(
+  client: Anthropic,
+  brief: Brief,
+  ctx: WeeklyContext,
+  options: MenuPromptOptions = {},
+): Promise<Recipe[]> {
+  return askMenu(client, buildMenuPrompt(brief, ctx, options));
 }
 
 export function reviseMenu(

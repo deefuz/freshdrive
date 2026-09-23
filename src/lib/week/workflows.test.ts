@@ -107,6 +107,19 @@ describe("runCreateWeek", () => {
     ]);
   });
 
+  it("demande à Claude d'éviter les recettes retenues des semaines précédentes", async () => {
+    const past = store.create(brief, new Date(2026, 8, 16, 12));
+    store.update(past.id, (w) => {
+      w.recipes = [makeRecipe({ id: "a", title: "Tacos" }), makeRecipe({ id: "b", title: "Non retenue" })];
+      w.selectedRecipeIds = ["a"];
+      w.status = "ready";
+    });
+    const backend = fakeBackend({ generateMenu: vi.fn(async () => menu()) });
+    const id = newWeek();
+    await runCreateWeek(id, deps(backend), jobRecorder());
+    expect(backend.generateMenu).toHaveBeenCalledWith(brief, ctx, expect.objectContaining({ avoidTitles: ["Tacos"] }));
+  });
+
   it("useArbiter: false : Claude n'arbitre pas les produits", async () => {
     const backend = fakeBackend({ generateMenu: vi.fn(async () => menu()) });
     const id = newWeek();

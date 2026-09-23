@@ -15,6 +15,7 @@ import { type Brief, BriefSchema } from "@/lib/recipes/brief";
 import { buildRequestDocument, parseRecipesFile } from "@/lib/recipes/handoff";
 import { type Week, WeekStore } from "@/lib/store/weeks";
 import { type WeekTotals, weekTotals } from "@/lib/week/edit";
+import { recentSelectedTitles } from "@/lib/week/history";
 import { runCreateWeek, runPush, type WorkflowDeps } from "@/lib/week/workflows";
 
 const argValue = (name: string) => {
@@ -82,7 +83,8 @@ async function main() {
     const requestFile = `data/requests/${today}.md`;
     const outputFile = `data/recipes/${today}.json`;
     fs.mkdirSync(path.dirname(requestFile), { recursive: true });
-    fs.writeFileSync(requestFile, buildRequestDocument(brief, ctx, outputFile));
+    const avoidTitles = recentSelectedTitles(new WeekStore().list());
+    fs.writeFileSync(requestFile, buildRequestDocument(brief, ctx, outputFile, { avoidTitles }));
     console.log(`\nDemande écrite : ${requestFile}`);
     console.log(`Dans Claude Code, dis : « génère les recettes de ${requestFile} »`);
     console.log(`Puis lance : npm run week -- --from-recipes ${outputFile}`);

@@ -34,6 +34,11 @@ describe("buildRequestDocument", () => {
     expect(doc).toContain('"pantryStaple"');
     expect(doc).toContain("data/recipes/2026-10-20.json");
   });
+
+  it("transmet les recettes à éviter", () => {
+    const doc = buildRequestDocument(brief, ctx, "data/recipes/2026-10-20.json", { avoidTitles: ["Tacos"] });
+    expect(doc).toContain("à éviter (ni la même recette, ni une variante très proche) : Tacos.");
+  });
 });
 
 describe("parseRecipesFile", () => {

@@ -2,7 +2,7 @@
 
 ## Contexte
 Sébastien veut une version personnelle et améliorée de HelloFresh. Chaque semaine, l'app génère des dîners adaptés à sa famille (kids friendly, peu calorique, vegan, sans produits transformés, budget, précisions libres), en s'appuyant sur ce qu'Auchan Drive propose **à ce moment-là** : promos, mises en avant, saison, événements. Après validation, elle remplit le panier Auchan Drive et produit des fiches PDF imprimables.
-Le dossier `/Users/deefuz/Local Sites/PERSO/hellofresh` est vide : c'est un nouveau projet.
+Nouveau projet, parti d'un dossier vide.
 
 ## Décisions validées
 - **Usage** : personnel/familial, en local sur le Mac. Pas de multi-utilisateurs.
@@ -58,7 +58,7 @@ Le type `Product` et les interfaces du connecteur sont définis dès le départ.
 5. Export PDF
 6. Finitions : historique, pas deux fois le même plat, plats favoris
 
-Après validation de ce plan : écrire la spec dans `docs/superpowers/specs/2026-09-23-myfresh-design.md` (avec `git init`), puis utiliser le skill writing-plans pour le plan d'implémentation détaillé.
+Prochaine étape : plan d'implémentation détaillé (skill writing-plans).
 
 ## Risques
 - Anti-bot ou changements du site Auchan : le connecteur est isolé et on utilise des sélecteurs robustes. En cas de captcha, on bascule en mode « headed » pour que l'utilisateur le résolve.

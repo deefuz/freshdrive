@@ -60,7 +60,7 @@ Il faut que le site te voie connecté **avec un drive choisi**. Tu peux connecte
 - Connecte-toi sur leclercdrive.fr dans Chrome et choisis ton drive. FreshDrive lit la session de Chrome à chaque fois et retrouve ton magasin tout seul. Pour vérifier : `npm run leclerc:import-chrome`, ou `npm run leclerc:smoke` (recherche, promos et panier en lecture seule).
 - Le site est protégé contre les robots : si FreshDrive annonce une session expirée, rouvre leclercdrive.fr dans Chrome (en étant connecté), puis clique sur « Vérifier ».
 
-Sur l'accueil de l'app, le panneau d'état affiche la connexion de chaque Drive, avec un bouton « Vérifier ».
+Sur l'accueil de l'app, le panneau d'état affiche la connexion de chaque Drive, avec un bouton « Vérifier ». Une vérification réussie charge aussi le contexte de la semaine du Drive (promos, anti-gaspi, thèmes), gardé 24 h.
 
 ### 4. Lancer l'app
 

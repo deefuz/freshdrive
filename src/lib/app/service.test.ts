@@ -300,6 +300,25 @@ describe("FreshDriveApp", () => {
     expect(() => app.edit(id, (w) => w)).not.toThrow();
   });
 
+  it("checkSession charge aussi le contexte du Drive vérifié (mis en cache pour les semaines suivantes)", async () => {
+    const loadContext = vi.fn<AppDeps["loadContext"]>(async () => ctx);
+    const { app, connector } = setup(undefined, { loadContext });
+    const status = await app.checkSession("leclerc");
+    expect(status).toMatchObject({ ok: true, message: "Session reprise de Chrome, drive détecté." });
+    expect(loadContext).toHaveBeenCalledWith(connector, "leclerc");
+  });
+
+  it("checkSession : un contexte impossible à charger ne rend pas la connexion invalide", async () => {
+    const { app } = setup(undefined, {
+      loadContext: async () => {
+        throw new Error("page promos illisible");
+      },
+    });
+    const status = await app.checkSession("auchan");
+    expect(status.ok).toBe(true);
+    expect(status.message).toMatch(/Contexte de la semaine non chargé \(page promos illisible\)/);
+  });
+
   it("checkSession enregistre un échec avec son message", async () => {
     const { app } = setup(undefined, {
       openStore: async () => {

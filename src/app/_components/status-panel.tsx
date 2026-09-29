@@ -149,7 +149,7 @@ export function StatusPanel({
             </>
           ) : (
             <p className="text-graphite">
-              Promos, anti-gaspi et thèmes {DRIVES[contextDrive].label} seront chargés à la création d&apos;une semaine.
+              Promos, anti-gaspi et thèmes {DRIVES[contextDrive].label} seront chargés à la vérification du Drive.
             </p>
           )}
         </Cell>

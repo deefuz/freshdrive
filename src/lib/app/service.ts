@@ -99,11 +99,26 @@ export class FreshDriveApp {
     }
   }
 
+  /**
+   * Vérifie la connexion au Drive et, puisqu'elle est ouverte, charge son contexte de la semaine
+   * (promos, anti-gaspi, thèmes ; mis en cache 24 h). Un contexte illisible ne rend pas la connexion invalide.
+   */
   async checkSession(drive: DriveId): Promise<SessionStatus> {
+    let connector: StoreConnector;
     try {
-      await this.openStore(drive);
+      connector = await this.openStore(drive);
     } catch {
       // l'échec est déjà enregistré dans this.sessions
+      return this.sessions[drive]!;
+    }
+    try {
+      await this.deps.loadContext(connector, drive);
+    } catch (e) {
+      const status = this.sessions[drive]!;
+      this.sessions[drive] = {
+        ...status,
+        message: `${status.message} Contexte de la semaine non chargé (${(e as Error).message}).`,
+      };
     }
     return this.sessions[drive]!;
   }

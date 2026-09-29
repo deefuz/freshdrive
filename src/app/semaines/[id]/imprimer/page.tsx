@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { badge, btn, card, field, fieldLabel, link, pageTitle } from "@/app/_components/ui";
 import { getApp } from "@/lib/app/instance";
+import { DRIVES, driveOf } from "@/lib/drives/drive";
 import { formatEur } from "@/lib/format";
 import {
   buildPrintData,
@@ -17,7 +18,7 @@ import {
 import { visualUrl } from "@/lib/visuals";
 import { PrintButton } from "./print-button";
 
-function RecipeSheet({ recipe, first }: { recipe: PrintRecipe; first: boolean }) {
+function RecipeSheet({ recipe, first, driveLabel }: { recipe: PrintRecipe; first: boolean; driveLabel: string }) {
   const visual = visualUrl(recipe.title);
   return (
     <article className={`space-y-3 ${first ? "" : "print:break-before-page"}`}>
@@ -47,7 +48,7 @@ function RecipeSheet({ recipe, first }: { recipe: PrintRecipe; first: boolean })
               <li key={i}>
                 <span className="font-bold">{ing.quantity}</span> {ing.name}
                 <span className="block text-xs text-pebble">
-                  {ing.inPantry ? "déjà au placard" : (ing.product ?? "pas de produit Auchan")}
+                  {ing.inPantry ? "déjà au placard" : (ing.product ?? `pas de produit ${driveLabel}`)}
                 </span>
               </li>
             ))}
@@ -106,6 +107,7 @@ export default async function PrintPage({
   }
 
   const data = buildPrintData(week, options);
+  const driveLabel = DRIVES[driveOf(week.brief)].label;
   const { shopping } = data;
   return (
     <div className="space-y-6 print:space-y-4 print:text-[11pt]">
@@ -161,7 +163,7 @@ export default async function PrintPage({
         <p className="text-graphite print:hidden">Choisis au moins une section à imprimer.</p>
       )}
 
-      {data.showRecipes && data.recipes.map((r, i) => <RecipeSheet key={r.id} recipe={r} first={i === 0} />)}
+      {data.showRecipes && data.recipes.map((r, i) => <RecipeSheet key={r.id} recipe={r} first={i === 0} driveLabel={driveLabel} />)}
 
       {data.showShopping && (
         <section className={`space-y-3 ${data.showRecipes ? "print:break-before-page" : ""}`}>
@@ -169,7 +171,7 @@ export default async function PrintPage({
           <table className="w-full text-sm">
             <thead className="border-b-2 border-charcoal text-left text-xs font-bold tracking-[0.04em] uppercase">
               <tr>
-                <th className="py-1 pr-2">Produit Auchan</th>
+                <th className="py-1 pr-2">Produit {driveLabel}</th>
                 <th className="py-1 pr-2">Pour</th>
                 <th className="py-1 pr-2 text-right">Quantité</th>
                 <th className="py-1 text-right">Coût</th>
@@ -197,7 +199,7 @@ export default async function PrintPage({
             {formatEur(shopping.budget)}
           </p>
           {shopping.missing.length > 0 && (
-            <p className="text-sm text-honey-ink">Introuvables chez Auchan : {shopping.missing.join(", ")}</p>
+            <p className="text-sm text-honey-ink">Introuvables chez {driveLabel} : {shopping.missing.join(", ")}</p>
           )}
           {shopping.pantry.length > 0 && (
             <div>

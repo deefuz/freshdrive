@@ -1,5 +1,6 @@
-import { rankWaaohOffers } from "../budget/promo";
+import { rankLoyaltyOffers } from "../budget/promo";
 import type { WeeklyContext } from "../context/build";
+import { type DriveId, DRIVES, driveOf } from "../drives/drive";
 import { formatEur } from "../format";
 import { profilePromptBlock } from "../profile/profile";
 import type { Product } from "../types";
@@ -13,12 +14,16 @@ const FILTER_LABELS: Record<DietFilter, string> = {
   unprocessed: "sans produits ultra-transformés (ingrédients bruts, pas de plats préparés, sauces toutes faites ou additifs)",
 };
 
-export const SYSTEM_PROMPT = `Tu es le chef d'un service de box repas familiales, en France.
+/** Rôle de Claude pour composer les recettes d'une semaine faite sur ce Drive. */
+export function systemPrompt(drive: DriveId): string {
+  const { name, loyalty } = DRIVES[drive];
+  return `Tu es le chef d'un service de box repas familiales, en France.
 Les allergies du foyer sont des interdits absolus et tu n'utilises que le matériel de cuisine indiqué quand il est précisé.
-Tu composes des dîners faisables en semaine avec des produits d'un supermarché Auchan Drive.
-Tu privilégies les produits en promotion et de saison fournis, ainsi que ceux qui créditent la carte fidélité Waaoh (cagnotte), en priorité ceux qui rapportent le plus ; pour une offre « sur le 2ème », prévois une quantité qui justifie deux paquets quand c'est raisonnable. Tu réutilises un même produit dans plusieurs recettes pour limiter le gaspillage et tu respectes strictement les contraintes alimentaires.
+Tu composes des dîners faisables en semaine avec des produits d'un supermarché ${name}.
+Tu privilégies les produits en promotion et de saison fournis, ainsi que ceux qui créditent la ${loyalty.card} (fidélité), en priorité ceux qui rapportent le plus ; pour une offre « sur le 2ème », prévois une quantité qui justifie deux paquets quand c'est raisonnable. Tu réutilises un même produit dans plusieurs recettes pour limiter le gaspillage et tu respectes strictement les contraintes alimentaires.
 Les quantités d'ingrédients sont des totaux pour la recette, en g, ml ou pièces (pce), cohérents avec le nombre de portions.
 Indique dans kidSteps les indices des étapes que des enfants peuvent réaliser (laver, mélanger, garnir, dresser).`;
+}
 
 function productLine(p: Product): string {
   const pack = p.pack ? ` ${p.pack.value}${p.pack.unit}` : "";
@@ -26,13 +31,14 @@ function productLine(p: Product): string {
   return `- ${p.brand ? `${p.brand} ` : ""}${p.name}${pack} : ${p.price.toFixed(2)} €${promo}`;
 }
 
-function contextBlock(ctx: WeeklyContext): string {
+function contextBlock(ctx: WeeklyContext, drive: DriveId): string {
+  const { loyalty } = DRIVES[drive];
   const promos = ctx.promos.filter((p) => p.promo?.kind === "price").slice(0, 80);
-  const waaoh = rankWaaohOffers(ctx.promos)
+  const loyaltyLines = rankLoyaltyOffers(ctx.promos)
     .slice(0, 40)
     .map(
       ({ product, packs, credit }) =>
-        `${productLine(product)} → ${formatEur(credit)} cagnottés pour ${packs} acheté${packs > 1 ? "s" : ""}`,
+        `${productLine(product)} → ${formatEur(credit)} ${loyalty.credited} pour ${packs} acheté${packs > 1 ? "s" : ""}`,
     );
   return [
     `Saison : ${ctx.season}. Produits de saison : ${ctx.seasonalProduce.join(", ")}.`,
@@ -41,8 +47,8 @@ function contextBlock(ctx: WeeklyContext): string {
       ? `Thèmes mis en avant par le magasin cette semaine (ignore ceux qui ne concernent pas les dîners) :\n${ctx.themes.map((t) => `- ${t}`).join("\n")}`
       : "",
     `Promos alimentaires de la semaine :\n${promos.map(productLine).join("\n")}`,
-    waaoh.length
-      ? `Produits qui créditent la carte Waaoh (du plus au moins rémunérateur) :\n${waaoh.join("\n")}`
+    loyaltyLines.length
+      ? `Produits qui créditent la ${loyalty.card} (du plus au moins rémunérateur) :\n${loyaltyLines.join("\n")}`
       : "",
     ctx.antiGaspi.length ? `Produits anti-gaspi :\n${ctx.antiGaspi.slice(0, 20).map(productLine).join("\n")}` : "",
   ]
@@ -99,7 +105,7 @@ export function buildMenuPrompt(brief: Brief, ctx: WeeklyContext, options: MenuP
   const request = options.count
     ? `Propose ${options.count} nouvelles recettes de dîner, différentes de celles déjà proposées, chacune pour ${servingsFor(brief)} portions.`
     : `Propose ${brief.dinners + 2} recettes de dîner variées (${brief.dinners} seront retenues, les autres servent d'alternatives), chacune pour ${servingsFor(brief)} portions.`;
-  return `${contextBlock(ctx)}
+  return `${contextBlock(ctx, driveOf(brief))}
 
 ${briefBlock(brief)}
 ${extra ? `\n${extra}\n` : ""}
@@ -107,7 +113,7 @@ ${request}`;
 }
 
 export function buildRevisePrompt(brief: Brief, ctx: WeeklyContext, recipes: Recipe[], instruction: string): string {
-  return `${contextBlock(ctx)}
+  return `${contextBlock(ctx, driveOf(brief))}
 
 ${briefBlock(brief)}
 
@@ -126,7 +132,7 @@ export function buildReviseRecipePrompt(
   instruction: string,
 ): string {
   const titles = others.map((r) => r.title).join(", ") || "aucune";
-  return `${contextBlock(ctx)}
+  return `${contextBlock(ctx, driveOf(brief))}
 
 ${briefBlock(brief)}
 

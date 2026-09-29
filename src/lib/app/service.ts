@@ -1,5 +1,6 @@
-import type { OpenedStore } from "../auchan/open";
 import type { WeeklyContext } from "../context/build";
+import { DRIVE_IDS, type DriveId, DRIVES, driveOf } from "../drives/drive";
+import type { OpenedStore } from "../drives/types";
 import type { IllustrateResult } from "../illustrate";
 import { JobRunner, reconcileStaleJob } from "../jobs/runner";
 import type { LlmBackend } from "../llm/backend";
@@ -9,7 +10,14 @@ import type { Recipe } from "../recipes/schema";
 import { favoriteId, type FavoriteStore } from "../store/favorites";
 import type { Week, WeekStore } from "../store/weeks";
 import type { StoreConnector } from "../types";
-import { runAddRecipes, runCreateWeek, runPush, runReviseRecipe, type WorkflowDeps } from "../week/workflows";
+import {
+  pushAlreadyStartedMessage,
+  runAddRecipes,
+  runCreateWeek,
+  runPush,
+  runReviseRecipe,
+  type WorkflowDeps,
+} from "../week/workflows";
 
 export interface SessionStatus {
   ok: boolean;
@@ -21,8 +29,8 @@ export interface AppDeps {
   store: WeekStore;
   favorites: FavoriteStore;
   backend: () => LlmBackend;
-  openAuchan: () => Promise<OpenedStore>;
-  loadContext: (connector: StoreConnector) => Promise<WeeklyContext>;
+  openStore: (drive: DriveId) => Promise<OpenedStore>;
+  loadContext: (connector: StoreConnector, drive: DriveId) => Promise<WeeklyContext>;
   /** dessine les recettes sans illustration ; absent = pas d'illustrations automatiques */
   illustrate?: (recipes: Recipe[]) => Promise<IllustrateResult>;
   now?: () => Date;
@@ -46,7 +54,11 @@ export class FreshDriveApp {
   readonly store: WeekStore;
   readonly favorites: FavoriteStore;
   readonly runner: JobRunner;
-  session: SessionStatus | null = null;
+  /** dernier état connu de la connexion à chaque Drive (null : pas encore vérifiée depuis le démarrage) */
+  readonly sessions: Record<DriveId, SessionStatus | null> = Object.fromEntries(DRIVE_IDS.map((d) => [d, null])) as Record<
+    DriveId,
+    SessionStatus | null
+  >;
   /** dessins en cours, par semaine (hors file des tâches : ils ne bloquent ni le panier ni les modifications) */
   private readonly drawing = new Map<string, Promise<void>>();
 
@@ -73,35 +85,37 @@ export class FreshDriveApp {
     return this.deps.backend().label;
   }
 
-  /** Ouvre la session Auchan et mémorise son état pour l'accueil. */
-  async openStore(): Promise<StoreConnector> {
+  /** Ouvre la session du Drive et mémorise son état pour l'accueil. */
+  async openStore(drive: DriveId): Promise<StoreConnector> {
     const checkedAt = this.now().toISOString();
     try {
-      const opened = await this.deps.openAuchan();
+      const opened = await this.deps.openStore(drive);
       const base = opened.source === "chrome" ? "Session reprise de Chrome, drive détecté." : "Session enregistrée, drive détecté.";
-      this.session = { ok: true, message: [base, ...opened.warnings].join(" "), checkedAt };
+      this.sessions[drive] = { ok: true, message: [base, ...opened.warnings].join(" "), checkedAt };
       return opened.connector;
     } catch (e) {
-      this.session = { ok: false, message: (e as Error).message, checkedAt };
+      this.sessions[drive] = { ok: false, message: (e as Error).message, checkedAt };
       throw e;
     }
   }
 
-  async checkSession(): Promise<SessionStatus> {
+  async checkSession(drive: DriveId): Promise<SessionStatus> {
     try {
-      await this.openStore();
+      await this.openStore(drive);
     } catch {
-      // l'échec est déjà enregistré dans this.session
+      // l'échec est déjà enregistré dans this.sessions
     }
-    return this.session!;
+    return this.sessions[drive]!;
   }
 
-  private workflowDeps(): WorkflowDeps {
+  /** Dépendances des tâches d'une semaine : elles parlent au Drive choisi pour cette semaine. */
+  private workflowDeps(weekId: string): WorkflowDeps {
+    const drive = driveOf(this.store.get(weekId)?.brief ?? {});
     return {
       store: this.store,
       backend: this.deps.backend(),
-      openStore: () => this.openStore(),
-      loadContext: this.deps.loadContext,
+      openStore: () => this.openStore(drive),
+      loadContext: (connector) => this.deps.loadContext(connector, drive),
     };
   }
 
@@ -172,7 +186,7 @@ export class FreshDriveApp {
       w.status = "generating";
     });
     this.runner.start(id, "create", async (job) => {
-      await runCreateWeek(id, this.workflowDeps(), job);
+      await runCreateWeek(id, this.workflowDeps(id), job);
       this.illustrateLater(id);
     });
     return this.store.get(id)!;
@@ -192,7 +206,16 @@ export class FreshDriveApp {
     });
   }
 
+  /** Drives dont la connexion a été vérifiée avec succès depuis le démarrage : les seuls proposés pour une semaine. */
+  verifiedDrives(): DriveId[] {
+    return DRIVE_IDS.filter((d) => this.sessions[d]?.ok);
+  }
+
   startCreateWeek(brief: Brief, favoriteIds: string[] = []): Week {
+    const drive = driveOf(brief);
+    if (!this.sessions[drive]?.ok) {
+      throw new ActionError(`Vérifie d'abord ta connexion à ${DRIVES[drive].name} sur l'accueil.`);
+    }
     this.assertIdle();
     const reused = this.reusableFavorites(brief, favoriteIds);
     const week = this.store.create(brief, this.now());
@@ -238,7 +261,7 @@ export class FreshDriveApp {
     if (!week.recipes.some((r) => r.id === recipeId)) throw new ActionError("Recette introuvable.");
     this.assertIdle();
     this.runner.start(id, "revise-recipe", async (job) => {
-      await runReviseRecipe(id, recipeId, text, this.workflowDeps(), job);
+      await runReviseRecipe(id, recipeId, text, this.workflowDeps(id), job);
       this.illustrateLater(id);
     });
   }
@@ -255,7 +278,7 @@ export class FreshDriveApp {
     this.assertIdle();
     const count = Math.min(ADD_RECIPES_COUNT, MAX_WEEK_RECIPES - week.recipes.length);
     this.runner.start(id, "add-recipes", async (job) => {
-      await runAddRecipes(id, count, this.workflowDeps(), job);
+      await runAddRecipes(id, count, this.workflowDeps(id), job);
       this.illustrateLater(id);
     });
   }
@@ -273,16 +296,11 @@ export class FreshDriveApp {
   startPush(id: string): void {
     const week = this.requireWeek(id);
     if (week.status === "pushed") throw new ActionError("Cette semaine a déjà été envoyée au panier.");
-    if (week.pushStartedAt) {
-      throw new ActionError(
-        "Un envoi au panier a déjà été lancé pour cette semaine (peut-être interrompu). Vérifie ton panier sur auchan.fr avant toute action.",
-      );
-    }
+    if (week.pushStartedAt) throw new ActionError(pushAlreadyStartedMessage(driveOf(week.brief)));
     if (week.status !== "ready") throw new ActionError("La semaine n'est pas prête.");
     this.assertIdle();
-    this.runner.start(id, "push", (job) =>
-      runPush(id, { store: this.store, openStore: () => this.openStore() }, job, () => this.now()),
-    );
+    const { openStore } = this.workflowDeps(id);
+    this.runner.start(id, "push", (job) => runPush(id, { store: this.store, openStore }, job, () => this.now()));
   }
 
   /** Applique une édition (fonction pure de src/lib/week/edit.ts) et l'enregistre. */

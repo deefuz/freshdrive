@@ -1,7 +1,8 @@
 import { z } from "zod";
 import type { WeeklyContext } from "../context/build";
 import type { Brief } from "./brief";
-import { buildMenuPrompt, type MenuPromptOptions, SYSTEM_PROMPT } from "./prompt";
+import { DEFAULT_DRIVE, driveOf } from "../drives/drive";
+import { buildMenuPrompt, type MenuPromptOptions, systemPrompt } from "./prompt";
 import { assertUniqueRecipeIds, MenuSchema, type Recipe } from "./schema";
 
 /** Demande de menu à traiter dans Claude Code (abonnement) plutôt que par l'API. */
@@ -11,15 +12,17 @@ export function buildRequestDocument(
   outputPath: string,
   options: MenuPromptOptions = {},
 ): string {
+  const drive = driveOf(brief);
+  const driveFlag = drive === DEFAULT_DRIVE ? "" : ` --drive ${drive}`;
   return `# Demande de menu FreshDrive
 
 À traiter par Claude Code : génère le menu décrit ci-dessous et écris-le dans \`${outputPath}\`
 au format JSON \`{ "recipes": [...] }\`, conforme au schéma en fin de document.
-Ensuite, l'utilisateur lancera : \`npm run week -- --from-recipes ${outputPath}\`
+Ensuite, l'utilisateur lancera : \`npm run week -- --from-recipes ${outputPath}${driveFlag}\`
 
 ## Rôle
 
-${SYSTEM_PROMPT}
+${systemPrompt(drive)}
 
 ## Demande
 

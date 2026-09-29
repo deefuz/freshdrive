@@ -51,6 +51,16 @@ describe("parseBriefForm", () => {
     });
   });
 
+  it("lit le Drive choisi ; sans choix, le brief n'en porte pas (Auchan par défaut)", () => {
+    expect(parseBriefForm(form([...base, ["drive", "leclerc"]]))).toMatchObject({ ok: true, brief: { drive: "leclerc" } });
+    const r = parseBriefForm(form(base));
+    expect(r.ok && r.brief.drive).toBeUndefined();
+  });
+
+  it("refuse un Drive inconnu", () => {
+    expect(parseBriefForm(form([...base, ["drive", "carrefour"]]))).toEqual({ ok: false, error: "Vérifie le Drive." });
+  });
+
   it("refuse un filtre inconnu", () => {
     expect(parseBriefForm(form([...base, ["filters", "carnivore"]]))).toEqual({
       ok: false,

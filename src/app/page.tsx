@@ -6,7 +6,8 @@ import { StatusPanel } from "@/app/_components/status-panel";
 import { badge, btn, card, pageTitle, sectionTitle } from "@/app/_components/ui";
 import { deleteWeekAction, removeFavoriteAction } from "@/app/actions";
 import { getApp } from "@/lib/app/instance";
-import { readCachedContext } from "@/lib/context/cache";
+import { contextCachePath, readCachedContext } from "@/lib/context/cache";
+import { DRIVES, driveOf } from "@/lib/drives/drive";
 import { formatEur, formatWeekDate, JOB_LABELS, TAG_LABELS, weekStatusLabel } from "@/lib/format";
 import { isPrintable } from "@/lib/print/sheet";
 import type { Week } from "@/lib/store/weeks";
@@ -26,8 +27,8 @@ export default async function HomePage() {
   const app = getApp();
   const weeks = app.listWeeks();
   const job = app.runner.current();
-  const context = readCachedContext();
-  const session = app.session;
+  const contextDrive = driveOf(app.store.latestBrief() ?? {});
+  const context = readCachedContext(contextCachePath(contextDrive));
   const favorites = app.favorites.list();
 
   return (
@@ -40,7 +41,7 @@ export default async function HomePage() {
           </Link>
         </div>
 
-        <StatusPanel session={session} context={context} backend={app.backendLabel()} />
+        <StatusPanel sessions={app.sessions} context={context} contextDrive={contextDrive} backend={app.backendLabel()} />
 
         {job?.status === "running" && (
           <section className="flex flex-wrap items-center justify-between gap-3 rounded bg-lime-wash px-5 py-4" aria-live="polite">
@@ -60,7 +61,7 @@ export default async function HomePage() {
           <div className={`${card} px-6 py-10 text-center`}>
             <p className="font-display text-2xl font-extrabold tracking-[-0.02em]">Aucune semaine pour l&apos;instant</p>
             <p className="mx-auto mt-2 max-w-[48ch] text-graphite">
-              Dis combien de dîners tu veux et ton budget : Claude propose les recettes avec les promos Auchan du moment.
+              Dis combien de dîners tu veux et ton budget : Claude propose les recettes avec les promos du moment de ton Drive.
             </p>
             <Link href="/semaines/nouvelle" className={`${btn.primary} mt-5`}>
               Préparer ma première semaine
@@ -85,6 +86,10 @@ export default async function HomePage() {
                   <div className="flex flex-wrap items-center justify-between gap-3 border-t border-oat-line px-5 py-3">
                     <p className="text-sm text-graphite">
                       <span className="font-bold text-charcoal">{w.brief.dinners} dîners</span>
+                      <span className="mx-2 text-oat-line" aria-hidden="true">
+                        |
+                      </span>
+                      {DRIVES[driveOf(w.brief)].name}
                       {total !== null && (
                         <>
                           <span className="mx-2 text-oat-line" aria-hidden="true">

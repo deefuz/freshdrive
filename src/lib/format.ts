@@ -72,7 +72,7 @@ export const JOB_LABELS: Record<JobKind, string> = {
   create: "Préparation de la semaine",
   "revise-recipe": "Modification d'une recette",
   "add-recipes": "Nouvelles propositions de recettes",
-  push: "Envoi au panier Auchan",
+  push: "Envoi au panier",
 };
 
 export const TAG_LABELS: Record<Recipe["tags"][number], string> = {

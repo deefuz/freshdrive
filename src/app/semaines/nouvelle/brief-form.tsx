@@ -1,9 +1,11 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import { DriveMark } from "@/app/_components/brand-marks";
 import { btn, card, chip, chipInput, field, fieldLabel, notice } from "@/app/_components/ui";
 import { createWeekAction } from "@/app/actions";
 import type { ActionResult } from "@/lib/app/action-result";
+import { DRIVE_IDS, type DriveId, DRIVES, driveOf } from "@/lib/drives/drive";
 import { type Brief, DIET_FILTERS } from "@/lib/recipes/brief";
 import { FILTER_UI_LABELS } from "@/lib/week/brief-form";
 
@@ -30,6 +32,7 @@ export function BriefForm({
   household,
   favorites,
   preselected,
+  verified,
 }: {
   initial: Brief;
   /** membres du profil : si la liste n'est pas vide, on coche qui dîne au lieu de saisir des nombres */
@@ -38,6 +41,8 @@ export function BriefForm({
   favorites: { id: string; title: string }[];
   /** favoris cochés d'avance (lien « Réutiliser » de l'accueil) */
   preselected: string[];
+  /** Drives dont la connexion est vérifiée : les seuls qu'on peut choisir (au moins un) */
+  verified: DriveId[];
 }) {
   const [state, formAction, pending] = useActionState<ActionResult, FormData>(createWeekAction, { error: null });
   // après un refus, on réaffiche ce qui a été saisi (React réinitialise le formulaire après l'action)
@@ -46,9 +51,39 @@ export function BriefForm({
   const [present, setPresent] = useState<Set<number>>(
     () => new Set(sent ? (sent.present ?? []).map(Number) : household.map((_, i) => i)),
   );
+  // Drive de la dernière semaine s'il est vérifié, sinon le premier vérifié
+  const defaultDrive = verified.includes(driveOf(initial)) ? driveOf(initial) : verified[0];
+  const chosenDrive = sent?.drive?.[0] ?? defaultDrive;
   const allergies = household.flatMap((m, i) => (present.has(i) ? m.allergies.map((a) => `${a} (${m.name})`) : []));
   return (
     <form action={formAction} className={`${card} space-y-7 p-5 sm:p-7`}>
+      <fieldset>
+        <legend className={legend}>Drive</legend>
+        <p className="mt-0.5 text-sm text-pebble">
+          Les recettes suivent ses promos, et le panier est rempli chez lui. Seuls les Drives vérifiés sur l&apos;accueil
+          sont proposés.
+        </p>
+        <div className="mt-2.5 flex flex-wrap gap-2">
+          {DRIVE_IDS.map((d) => (
+            <label key={d} className={`${chip} py-1.5 pl-1.5`}>
+              <input
+                type="radio"
+                name="drive"
+                value={d}
+                required
+                disabled={!verified.includes(d)}
+                defaultChecked={verified.includes(d) && chosenDrive === d}
+                className={chipInput}
+              />
+              <span className="[&>span]:size-7 [&>span]:rounded-md [&_img]:size-5">
+                <DriveMark drive={d} />
+              </span>
+              {DRIVES[d].name}
+              {!verified.includes(d) && <span className="font-normal opacity-70">non vérifié</span>}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <div className={`grid gap-4 ${household.length ? "sm:grid-cols-2" : "sm:grid-cols-4"}`}>
         <label className={fieldLabel}>
           Dîners

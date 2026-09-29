@@ -11,7 +11,7 @@ export interface WeekSpend {
   gross: number;
   /** remises immédiates des promos */
   promoSaved: number;
-  /** cagnotte Waaoh */
+  /** crédit fidélité (Waaoh, Ticket E.Leclerc) */
   loyalty: number;
   /** total payé estimé */
   net: number;
@@ -33,7 +33,7 @@ export interface SpendingStats {
   products: ProductStat[];
 }
 
-/** Dépenses des semaines envoyées au panier Auchan (estimées d'après le panier de chaque semaine). */
+/** Dépenses des semaines envoyées au panier du Drive (estimées d'après le panier de chaque semaine). */
 export function spendingStats(all: Week[]): SpendingStats {
   const pushed = all.filter((w) => w.status === "pushed").sort((a, b) => a.id.localeCompare(b.id));
   const products = new Map<string, ProductStat>();

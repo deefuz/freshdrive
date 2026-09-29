@@ -176,7 +176,7 @@ Une nappe vichy rouge sur les bords, un fond crème, de l'encre anthracite, et q
 - **Encre miel** (#7a4f00) sur **Voile miel** (#fff3d6): avertissements, quantité à vérifier, étapes « avec les enfants ».
 - **Betterave** (#c2185b): badge « PROMO » uniquement.
 - **Myrtille** (#1b5faa): badge d'information (« ENVOYÉE »), rare.
-- **Terre cuite Claude** (#c96442): uniquement le fond de la pastille-logo 40px de Claude (panneau d'état de l'accueil), icône blanc cassé dessus. Jamais ailleurs. La pastille Auchan montre le logo officiel (chargé depuis auchan.fr) sur blanc cassé.
+- **Terre cuite Claude** (#c96442): uniquement le fond de la pastille-logo 40px de Claude (panneau d'état de l'accueil), icône blanc cassé dessus. Jamais ailleurs. Les pastilles des Drives montrent le logo officiel de chaque enseigne (chargé depuis auchan.fr ou leclercdrive.fr) sur blanc cassé.
 
 ### Graphiques
 - Dépenses par semaine : colonnes empilées de 24px max, **basilic** = payé, **miel** (#e0a526) = économies promos, 2px d'écart entre segments, bout arrondi 4px ; trait anthracite 2px = budget. Légende toujours visible, info-bulle au survol et au focus, tableau équivalent sous le graphique (le miel n'atteint pas 3:1 sur le fond).
@@ -265,6 +265,10 @@ Chaque recette a une illustration SVG, dessinée automatiquement par Claude quan
 - **Vaisselle :** assiette #f4efe4 et fond #fbf8f1 ; ombre = même forme décalée de (8, 10), anthracite à 10 %.
 - **Aliments :** formes plates sans contour, 2 à 3 tons par aliment (base, ombre, reflet), petites touches d'herbes vertes (#4f8a2f, #3f7a33). Les ingrédients principaux du titre doivent être reconnaissables à la taille d'une carte.
 - **Interdits :** dégradés, contours noirs, texte, visages ou personnages, photoréalisme.
+
+### Panneau d'état de l'accueil
+- **Mes Drives** : bandeau avoine (seconde couche, sans ombre) qui regroupe les connexions ; une ligne blanc cassé par Drive, côte à côte sur grand écran : pastille-logo, nom en gras, pastille d'état (« Connectée », « À reconnecter », « Non vérifiée »), dernier message, bouton secondaire « Vérifier » à droite.
+- Dessous, une carte « Posée » à deux colonnes pour l'information : contexte de la semaine (du Drive de la dernière semaine) et Claude.
 
 ### Budget bar (signature)
 - Bandeau avoine collant en haut de la semaine : total en Bricolage 800 (basilic sous le budget, bordeaux au-dessus), jauge basilic (bordeaux si dépassement) sur piste blanc cassé, économies promos en basilic, action principale anthracite à droite. Rappelle la barre « voir nos prix » de HelloFresh.

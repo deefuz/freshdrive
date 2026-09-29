@@ -1,5 +1,5 @@
-import { openAuchan } from "../auchan/open";
-import { loadWeeklyContext } from "../context/cache";
+import { contextCachePath, loadWeeklyContext } from "../context/cache";
+import { openDrive } from "../drives/open";
 import { illustrateRecipes } from "../illustrate";
 import { selectBackend } from "../llm/backend";
 import { FavoriteStore } from "../store/favorites";
@@ -17,8 +17,8 @@ export function getApp(): FreshDriveApp {
     store: new WeekStore(),
     favorites: new FavoriteStore(),
     backend: () => selectBackend(),
-    openAuchan: () => openAuchan(),
-    loadContext: (connector) => loadWeeklyContext(connector),
+    openStore: (drive) => openDrive(drive),
+    loadContext: (connector, drive) => loadWeeklyContext(connector, { cachePath: contextCachePath(drive) }),
     // illustrations automatiques des recettes ; FRESHDRIVE_VISUELS=non pour les désactiver
     illustrate:
       process.env.FRESHDRIVE_VISUELS === "non"

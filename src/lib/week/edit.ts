@@ -42,7 +42,7 @@ export interface WeekTotals {
   gross: number;
   /** remises immédiates des promos */
   promoSaved: number;
-  /** montant cagnotté (carte Waaoh), non déduit */
+  /** montant crédité sur la carte de fidélité (Waaoh, E.Leclerc), non déduit */
   loyalty: number;
   /** total estimé, comparé au budget */
   net: number;

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { makeProduct } from "../../../tests/helpers/factories";
 import { FakeConnector } from "../../../tests/helpers/fake-connector";
-import { SessionExpiredError } from "../auchan/http";
+import { SessionExpiredError } from "../drives/errors";
 import type { BasketLine } from "../budget/basket";
 import type { Product } from "../types";
 import { round2 } from "../units";

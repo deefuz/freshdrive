@@ -75,7 +75,7 @@ export function basketToCartLines(lines: BasketLine[]): CartLine[] {
   });
 }
 
-/** Lignes réellement envoyées au panier Auchan (fusionnées avec le panier existant et entre elles si plusieurs
+/** Lignes réellement envoyées au panier du Drive (fusionnées avec le panier existant et entre elles si plusieurs
  * lignes du panier pointent vers le même produit) : c'est ce compte qu'il faut afficher avant de demander confirmation. */
 export function mergeBasketIntoCart(cart: Cart, lines: BasketLine[]): CartLine[] {
   return mergeWithCart(cart, basketToCartLines(lines));

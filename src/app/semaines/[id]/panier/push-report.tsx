@@ -1,23 +1,24 @@
 import { btn, card, notice } from "@/app/_components/ui";
 import { formatDateTime, formatEur } from "@/lib/format";
+import type { DriveInfo } from "@/lib/drives/drive";
 import type { PushReport } from "@/lib/store/weeks";
 
-export function PushReportView({ report }: { report: PushReport }) {
+export function PushReportView({ report, drive }: { report: PushReport; drive: DriveInfo }) {
   return (
     <div className="space-y-6">
       <p className={`${notice.success} text-base`}>
         Envoyé le {formatDateTime(report.pushedAt)} : {report.added.length} produit(s) ajouté(s),{" "}
-        {report.adjusted.length} ajusté(s) par Auchan, {report.failed.length} en échec. Total du panier Auchan :{" "}
+        {report.adjusted.length} ajusté(s) par {drive.label}, {report.failed.length} en échec. Total du panier {drive.label} :{" "}
         {report.cartTotal !== null ? formatEur(report.cartTotal) : "total inconnu"}.
       </p>
       {report.adjusted.length > 0 && (
         <section className={`${card} p-5`}>
-          <h2 className="font-sans text-base font-bold tracking-normal">Ajustés par Auchan (stock)</h2>
+          <h2 className="font-sans text-base font-bold tracking-normal">Ajustés par {drive.label} (stock)</h2>
           <ul className="mt-2 list-disc space-y-1 pl-5 text-sm">
             {report.adjusted.map((l) => (
               <li key={l.productId}>
                 {l.name} :{" "}
-                {l.actual === 0 ? "retiré par Auchan (rupture)" : `${l.actual} dans le panier au lieu de ${l.requested}`}
+                {l.actual === 0 ? `retiré par ${drive.label} (rupture)` : `${l.actual} dans le panier au lieu de ${l.requested}`}
               </li>
             ))}
           </ul>
@@ -55,11 +56,11 @@ export function PushReportView({ report }: { report: PushReport }) {
         </details>
       )}
       <div className="space-y-2">
-        <a href="https://www.auchan.fr" target="_blank" rel="noreferrer" className={btn.primary}>
-          Finaliser ma commande sur auchan.fr
+        <a href={drive.siteUrl} target="_blank" rel="noreferrer" className={btn.primary}>
+          Finaliser ma commande sur {drive.siteHost}
         </a>
         <p className="text-sm text-pebble">
-          FreshDrive ne passe jamais commande : choisis ton créneau et paie sur le site Auchan.
+          FreshDrive ne passe jamais commande : choisis ton créneau et paie sur le site {drive.label}.
         </p>
       </div>
     </div>

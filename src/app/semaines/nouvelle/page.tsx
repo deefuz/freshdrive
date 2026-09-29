@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
+import { DrivesBand } from "@/app/_components/status-panel";
 import { link, notice, pageTitle } from "@/app/_components/ui";
 import { getApp } from "@/lib/app/instance";
 import { ALLERGENS } from "@/lib/profile/profile";
@@ -30,6 +31,7 @@ export default async function NewWeekPage({
   }));
   const favorites = app.favorites.list().map((f) => ({ id: f.id, title: f.recipe.title }));
   const preselected = [favori ?? []].flat().filter((id) => favorites.some((f) => f.id === id));
+  const verified = app.verifiedDrives();
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -48,7 +50,16 @@ export default async function NewWeekPage({
           Une tâche est déjà en cours : attends qu&apos;elle se termine avant d&apos;en lancer une autre.
         </p>
       )}
-      <BriefForm initial={brief} household={household} favorites={favorites} preselected={preselected} />
+      {verified.length ? (
+        <BriefForm initial={brief} household={household} favorites={favorites} preselected={preselected} verified={verified} />
+      ) : (
+        <div className="space-y-3">
+          <p role="status" className={notice.warning}>
+            Vérifie d&apos;abord la connexion à au moins un Drive : la semaine se prépare avec ses promos et son panier.
+          </p>
+          <DrivesBand sessions={app.sessions} />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { chooseSelection } from "../budget/basket";
 import { previewPush, productLabels, pushLines, stoppedBySessionExpiry } from "../cart/push";
 import { summarizeContext, type WeeklyContext } from "../context/build";
+import { type DriveId, DRIVES, driveOf } from "../drives/drive";
 import { type JobContext, pushFailureMessage } from "../jobs/runner";
 import type { LlmBackend } from "../llm/backend";
 import { type IngredientMatch, matchNeeds } from "../matching/match";
@@ -19,7 +20,7 @@ import { recentSelectedTitles } from "./history";
 export interface WorkflowDeps {
   store: WeekStore;
   backend: LlmBackend;
-  /** ouvre la session Auchan (import Chrome + vérification du drive) */
+  /** ouvre la session du Drive de la semaine (import Chrome + vérification du magasin) */
   openStore(): Promise<StoreConnector>;
   loadContext(connector: StoreConnector): Promise<WeeklyContext>;
   /** arbitrage des produits par Claude (défaut : true) */
@@ -68,7 +69,7 @@ async function matchFor(
 ): Promise<{ matches: IngredientMatch[]; warnings: string[] }> {
   const warnings: string[] = [];
   const arbiter = deps.useArbiter === false ? undefined : tolerantArbiter(deps.backend.arbitrate, warnings);
-  job.step("Choix des produits Auchan");
+  job.step(`Choix des produits ${DRIVES[driveOf(brief)].label}`);
   const matches = await matchNeeds(needs, scoreOptions(brief), {
     connector,
     arbiter,
@@ -79,6 +80,10 @@ async function matchFor(
     },
   });
   return { matches, warnings };
+}
+
+function connectStep(week: Week): string {
+  return `Connexion à ${DRIVES[driveOf(week.brief)].label}`;
 }
 
 function setWarnings(week: Week, warnings: string[]): void {
@@ -104,7 +109,7 @@ export async function runCreateWeek(
 ): Promise<void> {
   const week = requireWeek(deps, weekId);
   try {
-    job.step("Connexion à Auchan");
+    job.step(connectStep(week));
     const connector = await deps.openStore();
     job.step("Contexte de la semaine");
     const ctx = await deps.loadContext(connector);
@@ -169,7 +174,7 @@ export async function runReviseRecipe(
   const recipe = week.recipes.find((r) => r.id === recipeId);
   if (!recipe) throw new Error("Recette introuvable.");
 
-  job.step("Connexion à Auchan");
+  job.step(connectStep(week));
   const connector = await deps.openStore();
   job.step("Contexte de la semaine");
   const ctx = await deps.loadContext(connector);
@@ -208,7 +213,7 @@ function uniqueId(id: string, taken: Set<string>): string {
 export async function runAddRecipes(weekId: string, count: number, deps: WorkflowDeps, job: JobContext): Promise<void> {
   const week = requireWeek(deps, weekId);
 
-  job.step("Connexion à Auchan");
+  job.step(connectStep(week));
   const connector = await deps.openStore();
   job.step("Contexte de la semaine");
   const ctx = await deps.loadContext(connector);
@@ -248,8 +253,15 @@ export async function runAddRecipes(weekId: string, count: number, deps: Workflo
   });
 }
 
-export const PUSH_SESSION_EXPIRED_MESSAGE =
-  "Session Auchan expirée avant l'envoi : reconnecte-toi sur auchan.fr dans Chrome puis relance l'envoi.";
+export function pushSessionExpiredMessage(drive: DriveId): string {
+  const { label, siteHost } = DRIVES[drive];
+  return `Session ${label} expirée avant l'envoi : reconnecte-toi sur ${siteHost} dans Chrome puis relance l'envoi.`;
+}
+
+/** Envoi déjà lancé (peut-être interrompu) : l'utilisateur doit vérifier son panier avant toute action. */
+export function pushAlreadyStartedMessage(drive: DriveId): string {
+  return `Un envoi au panier a déjà été lancé pour cette semaine (peut-être interrompu). Vérifie ton panier sur ${DRIVES[drive].siteHost} avant toute action.`;
+}
 
 export async function runPush(
   weekId: string,
@@ -258,19 +270,17 @@ export async function runPush(
   now: () => Date = () => new Date(),
 ): Promise<void> {
   const week = requireWeek(deps, weekId);
+  const drive = driveOf(week.brief);
   if (week.status === "pushed") throw new Error("Cette semaine a déjà été envoyée au panier.");
-  if (week.pushStartedAt) {
-    throw new Error(
-      "Un envoi au panier a déjà été lancé pour cette semaine (peut-être interrompu). Vérifie ton panier sur auchan.fr avant toute action.",
-    );
-  }
+  if (week.pushStartedAt) throw new Error(pushAlreadyStartedMessage(drive));
   if (week.status !== "ready") throw new Error("La semaine n'est pas prête.");
   const { basket } = weekTotals(week);
   if (!basket.lines.length) throw new Error("Aucun produit à envoyer : retiens au moins une recette.");
 
-  job.step("Connexion à Auchan");
+  const { label } = DRIVES[drive];
+  job.step(`Connexion à ${label}`);
   const connector = await deps.openStore();
-  job.step("Lecture du panier Auchan");
+  job.step(`Lecture du panier ${label}`);
   const { cartLines } = previewPush(await connector.getCart(), basket.lines);
 
   // posé avant le premier envoi de ligne : si le serveur redémarre en cours de route, un 2e envoi est refusé.
@@ -281,7 +291,7 @@ export async function runPush(
   const interrupted = (e: unknown) => new Error(pushFailureMessage(e instanceof Error ? e.message : String(e)));
   let report: PushReport;
   try {
-    job.step("Ajout au panier Auchan");
+    job.step(`Ajout au panier ${label}`);
     report = await pushLines(connector, cartLines, productLabels(basket.lines), {
       onProgress: (done, total) => job.progress(done, total),
       now: now(),
@@ -296,7 +306,7 @@ export async function runPush(
     deps.store.update(weekId, (w) => {
       delete w.pushStartedAt;
     });
-    throw new Error(PUSH_SESSION_EXPIRED_MESSAGE);
+    throw new Error(pushSessionExpiredMessage(drive));
   }
 
   try {

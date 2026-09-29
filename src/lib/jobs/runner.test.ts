@@ -98,7 +98,7 @@ describe("reconcileStaleJob", () => {
       null,
     );
     expect(week.status).toBe("ready");
-    expect(week.job?.error).toBe("Envoi interrompu : vérifie ton panier sur auchan.fr avant toute action.");
+    expect(week.job?.error).toBe("Envoi interrompu : vérifie ton panier sur le site du Drive avant toute action.");
   });
 
   it("tâche réellement en cours, ou déjà terminée : semaine inchangée", () => {
@@ -119,7 +119,7 @@ describe("messages d'échec", () => {
 
   it("pushFailureMessage : consigne de vérifier le panier, avec la cause", () => {
     expect(pushFailureMessage("disque plein")).toBe(
-      "Envoi interrompu : vérifie ton panier sur auchan.fr avant toute action. (Cause : disque plein)",
+      "Envoi interrompu : vérifie ton panier sur le site du Drive avant toute action. (Cause : disque plein)",
     );
     expect(pushFailureMessage("")).toBe(PUSH_INTERRUPTED_MESSAGE);
   });

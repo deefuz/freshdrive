@@ -4,10 +4,11 @@ config({ path: ".env.local" });
 import fs from "node:fs";
 import path from "node:path";
 import readline from "node:readline/promises";
-import { openAuchan } from "@/lib/auchan/open";
 import { previewPush } from "@/lib/cart/push";
 import { summarizeContext } from "@/lib/context/build";
-import { loadWeeklyContext } from "@/lib/context/cache";
+import { contextCachePath, loadWeeklyContext } from "@/lib/context/cache";
+import { DRIVE_IDS, DRIVES, driveOf, isDriveId } from "@/lib/drives/drive";
+import { openDrive } from "@/lib/drives/open";
 import type { JobContext } from "@/lib/jobs/runner";
 import { formatEur } from "@/lib/format";
 import { illustrateRecipes } from "@/lib/illustrate";
@@ -69,17 +70,24 @@ function printWeek(week: Week): WeekTotals {
 async function main() {
   console.log("⚠ Ne lance pas le CLI et l'app web en même temps sur la même semaine.");
 
-  const brief = withProfile(loadBrief(argValue("--brief") ?? "data/brief.json"), new ProfileStore().get());
+  const driveArg = argValue("--drive");
+  if (driveArg !== undefined && !isDriveId(driveArg)) {
+    throw new Error(`--drive : ${driveArg} inconnu (choix : ${DRIVE_IDS.join(", ")})`);
+  }
+  const fromFile = withProfile(loadBrief(argValue("--brief") ?? "data/brief.json"), new ProfileStore().get());
+  const brief: Brief = driveArg ? { ...fromFile, drive: driveArg } : fromFile;
+  const drive = driveOf(brief);
+  const { label, siteUrl } = DRIVES[drive];
   const recipesFile = argValue("--from-recipes");
   const today = new Date().toISOString().slice(0, 10);
 
-  const opened = await openAuchan({ importChrome: !has("--no-chrome") });
-  console.log(opened.source === "chrome" ? "Session Auchan reprise de Chrome" : "Session Auchan enregistrée utilisée");
+  const opened = await openDrive(drive, { importChrome: !has("--no-chrome") });
+  console.log(opened.source === "chrome" ? `Session ${label} reprise de Chrome` : `Session ${label} enregistrée utilisée`);
   for (const w of opened.warnings) console.log(`⚠ ${w}`);
   const connector = opened.connector;
 
   step("Contexte de la semaine");
-  const ctx = await loadWeeklyContext(connector);
+  const ctx = await loadWeeklyContext(connector, { cachePath: contextCachePath(drive) });
   console.log(summarizeContext(ctx));
 
   if (has("--prepare")) {
@@ -90,7 +98,7 @@ async function main() {
     fs.writeFileSync(requestFile, buildRequestDocument(brief, ctx, outputFile, { avoidTitles }));
     console.log(`\nDemande écrite : ${requestFile}`);
     console.log(`Dans Claude Code, dis : « génère les recettes de ${requestFile} »`);
-    console.log(`Puis lance : npm run week -- --from-recipes ${outputFile}`);
+    console.log(`Puis lance : npm run week -- --from-recipes ${outputFile}${driveArg ? ` --drive ${drive}` : ""}`);
     return;
   }
 
@@ -152,14 +160,14 @@ async function main() {
 
   if (has("--push")) {
     const { cartLines } = previewPush(await connector.getCart(), totals.basket.lines);
-    if (await ask(`Ajouter ${cartLines.length} produits à ton panier Auchan ?`)) {
+    if (await ask(`Ajouter ${cartLines.length} produits à ton panier ${label} ?`)) {
       await runPush(week.id, { store, openStore: async () => connector }, cliJob);
       const report = store.get(week.id)!.pushReport!;
       console.log();
       for (const a of report.adjusted) console.log(`⚠ ${a.name} : ${a.actual} au lieu de ${a.requested} (stock)`);
       if (report.cartTotal !== null) console.log(`Panier : ${formatEur(report.cartTotal)}`);
       if (report.failed.length) console.log(`❌ Échecs : ${report.failed.map((f) => `${f.name} (${f.error})`).join(", ")}`);
-      console.log("Finalise ta commande (créneau et paiement) sur https://www.auchan.fr");
+      console.log(`Finalise ta commande (créneau et paiement) sur ${siteUrl}`);
     }
   }
   rl.close();

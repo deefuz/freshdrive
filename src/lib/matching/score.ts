@@ -33,7 +33,7 @@ export function packsNeeded(need: Need, product: Product): { packs: number; unce
 export function scoreCandidate(need: Need, product: Product, opts: ScoreOptions): MatchCandidate {
   const { packs, uncertain } = packsNeeded(need, product);
   const cost = round2(packs * product.price);
-  // remise immédiate et cagnotte Waaoh réellement obtenues pour ces paquets : 1 € cagnotté vaut 1 € économisé
+  // remise immédiate et crédit fidélité réellement obtenus pour ces paquets : 1 € cagnotté vaut 1 € économisé
   const effect = product.promo ? promoEffect(product.promo.label, product.price, packs) : { saved: 0, loyalty: 0 };
   let score = Math.max(0.01, cost - effect.saved - effect.loyalty);
   if (product.pack && product.pack.unit === need.unit) {

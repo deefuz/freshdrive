@@ -46,7 +46,7 @@ export interface PushReport {
   added: PushLineReport[];
   adjusted: PushLineReport[];
   failed: PushLineReport[];
-  /** total du panier Auchan après l'envoi, en € ; null s'il n'a pas pu être relu */
+  /** total du panier du Drive après l'envoi, en € ; null s'il n'a pas pu être relu */
   cartTotal: number | null;
 }
 

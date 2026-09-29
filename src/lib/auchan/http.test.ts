@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { AuchanHttp, AuchanHttpError, RequestGate, SessionExpiredError } from "./http";
+import { SessionExpiredError } from "../drives/errors";
+import { RequestGate } from "../drives/gate";
+import { AuchanHttp, AuchanHttpError } from "./http";
 
 const session = { cookieHeader: "a=1", consentId: "c" };
 

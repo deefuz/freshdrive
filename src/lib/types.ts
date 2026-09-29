@@ -7,7 +7,7 @@ export interface Quantity {
 
 export interface Promo {
   label: string;
-  /** "price" = vraie baisse de prix ; "loyalty" = cagnotte carte Waaoh */
+  /** "price" = vraie baisse de prix ; "loyalty" = crédit sur la carte de fidélité (Waaoh, Ticket E.Leclerc) */
   kind: "price" | "loyalty";
 }
 
@@ -27,7 +27,7 @@ export interface Product {
   isOrganic: boolean;
   isSeasonal: boolean;
   promo: Promo | null;
-  /** stock magasin (data-stock) ; null si inconnu */
+  /** stock du magasin ; null si inconnu */
   stock: number | null;
   url: string;
 }

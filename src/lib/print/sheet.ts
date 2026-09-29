@@ -71,7 +71,7 @@ export function isPrintable(week: Pick<Week, "status" | "selectedRecipeIds">): b
 export interface PrintIngredient {
   name: string;
   quantity: string;
-  /** produit Auchan choisi ; null si aucun produit ou si l'ingrédient est au placard */
+  /** produit du Drive choisi ; null si aucun produit ou si l'ingrédient est au placard */
   product: string | null;
   inPantry: boolean;
 }
@@ -120,7 +120,7 @@ export interface PrintData {
     lines: ShoppingLine[];
     /** ingrédients cochés « déjà au placard » */
     pantry: { name: string; quantity: string }[];
-    /** ingrédients sans produit Auchan */
+    /** ingrédients sans produit au Drive */
     missing: string[];
     gross: number;
     promoSaved: number;

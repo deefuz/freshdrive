@@ -1,13 +1,20 @@
+import type { DriveId } from "@/lib/drives/drive";
+
 /** Pastilles-logos des services qu'utilise FreshDrive. */
 
 const tile = "inline-flex size-10 shrink-0 items-center justify-center rounded-lg";
 
-/** Auchan Drive : le logo officiel, chargé depuis auchan.fr (aucune copie dans le dépôt) */
-export function AuchanMark() {
+const DRIVE_ICONS: Record<DriveId, string> = {
+  auchan: "https://www.auchan.fr/favicon.ico",
+  leclerc: "https://www.leclercdrive.fr/favicon.ico",
+};
+
+/** Logo officiel du Drive, chargé depuis son site (aucune copie dans le dépôt) */
+export function DriveMark({ drive }: { drive: DriveId }) {
   return (
     <span className={`${tile} border border-oat-line bg-paper`} aria-hidden="true">
-      {/* eslint-disable-next-line @next/next/no-img-element -- image distante d'auchan.fr, affichée telle quelle */}
-      <img src="https://www.auchan.fr/favicon.ico" alt="" width={26} height={26} referrerPolicy="no-referrer" />
+      {/* eslint-disable-next-line @next/next/no-img-element -- image distante du site du Drive, affichée telle quelle */}
+      <img src={DRIVE_ICONS[drive]} alt="" width={26} height={26} referrerPolicy="no-referrer" />
     </span>
   );
 }

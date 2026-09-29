@@ -1,4 +1,4 @@
-import { SessionExpiredError } from "../auchan/http";
+import { SessionExpiredError } from "../drives/errors";
 import { type BasketLine, mergeBasketIntoCart } from "../budget/basket";
 import type { PushLineReport, PushReport } from "../store/weeks";
 import type { Cart, CartLine, StoreConnector } from "../types";
@@ -11,9 +11,9 @@ export interface PushPreviewRow {
   url: string;
   /** paquets ajoutés par FreshDrive */
   packs: number;
-  /** quantité déjà dans le panier Auchan */
+  /** quantité déjà dans le panier du Drive */
   inCart: number;
-  /** quantité absolue envoyée à Auchan */
+  /** quantité absolue envoyée au Drive */
   finalQuantity: number;
   cost: number;
 }
@@ -49,10 +49,10 @@ export function previewPush(cart: Cart, lines: BasketLine[]): PushPreview {
   return { rows, cartLines, addedCost: round2(rows.reduce((sum, r) => sum + r.cost, 0)) };
 }
 
-/** Erreur des lignes non envoyées parce que la session Auchan a expiré en cours d'envoi. */
-export const PUSH_SESSION_EXPIRED_LINE = "Session Auchan expirée : ligne non envoyée.";
+/** Erreur des lignes non envoyées parce que la session du Drive a expiré en cours d'envoi. */
+export const PUSH_SESSION_EXPIRED_LINE = "Session du Drive expirée : ligne non envoyée.";
 
-/** L'envoi s'est arrêté sur une session Auchan expirée. */
+/** L'envoi s'est arrêté sur une session expirée. */
 export function stoppedBySessionExpiry(report: PushReport): boolean {
   return report.failed.some((l) => l.error === PUSH_SESSION_EXPIRED_LINE);
 }

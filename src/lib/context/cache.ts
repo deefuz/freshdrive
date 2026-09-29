@@ -1,13 +1,17 @@
 import fs from "node:fs";
 import path from "node:path";
+import type { DriveId } from "../drives/drive";
 import type { StoreConnector } from "../types";
 import { buildWeeklyContext, isCacheableContext, type WeeklyContext } from "./build";
 
-export const CONTEXT_CACHE = "data/cache/context.json";
+/** Un cache par Drive : les promos et thèmes sont propres à chaque enseigne. */
+export function contextCachePath(drive: DriveId): string {
+  return `data/cache/context-${drive}.json`;
+}
 const DAY_MS = 86_400_000;
 
 /** Contexte en cache s'il a moins de 24 h et contient des promos ; sinon null. */
-export function readCachedContext(cachePath: string = CONTEXT_CACHE, nowMs: number = Date.now()): WeeklyContext | null {
+export function readCachedContext(cachePath: string, nowMs: number = Date.now()): WeeklyContext | null {
   if (!fs.existsSync(cachePath)) return null;
   try {
     const cached = JSON.parse(fs.readFileSync(cachePath, "utf8")) as WeeklyContext;
@@ -20,9 +24,9 @@ export function readCachedContext(cachePath: string = CONTEXT_CACHE, nowMs: numb
 
 export async function loadWeeklyContext(
   connector: StoreConnector,
-  opts: { cachePath?: string; now?: Date } = {},
+  opts: { cachePath: string; now?: Date },
 ): Promise<WeeklyContext> {
-  const cachePath = opts.cachePath ?? CONTEXT_CACHE;
+  const { cachePath } = opts;
   const now = opts.now ?? new Date();
   const cached = readCachedContext(cachePath, now.getTime());
   if (cached) return cached;

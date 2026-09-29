@@ -11,7 +11,7 @@ const roboto = Roboto({ variable: "--font-roboto", subsets: ["latin"], weight: [
 
 export const metadata: Metadata = {
   title: "FreshDrive",
-  description: "Les dîners de la semaine choisis avec les promos Auchan Drive, et le panier rempli pour toi.",
+  description: "Les dîners de la semaine choisis avec les promos de ton Drive (Auchan ou Leclerc), et le panier rempli pour toi.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
@@ -44,7 +44,15 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
           </nav>
         </header>
         <main className="mx-auto w-full max-w-5xl flex-1 px-4 pt-8 pb-16 print:max-w-none print:p-0">{children}</main>
-        <footer className="vichy h-4 [--vichy-size:16px] print:hidden" aria-hidden="true" />
+        <footer className="print:hidden">
+          <p className="px-4 pb-4 text-center text-xs text-pebble">
+            FreshDrive, par{" "}
+            <a href="https://seb.couix.net" target="_blank" rel="noopener" className="font-medium text-graphite underline-offset-2 hover:underline">
+              Sébastien Couix
+            </a>
+          </p>
+          <div className="vichy h-4 [--vichy-size:16px]" aria-hidden="true" />
+        </footer>
       </body>
     </html>
   );

@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
 import { type ActionResult, failure, formValues, OK } from "@/lib/app/action-result";
 import { getApp } from "@/lib/app/instance";
+import { type DriveId, isDriveId } from "@/lib/drives/drive";
 import { ProfileSchema } from "@/lib/profile/profile";
 import { ProfileStore } from "@/lib/profile/store";
 import { applyHousehold, parseBriefForm, withProfile } from "@/lib/week/brief-form";
@@ -20,8 +21,9 @@ async function attempt(operation: () => unknown): Promise<ActionResult> {
   return OK;
 }
 
-export async function checkSessionAction(): Promise<ActionResult> {
-  await getApp().checkSession();
+export async function checkSessionAction(drive: DriveId): Promise<ActionResult> {
+  if (!isDriveId(drive)) return { error: "Drive inconnu." };
+  await getApp().checkSession(drive);
   refresh();
   return OK;
 }

@@ -4,7 +4,7 @@ import { makeProduct, makeRecipe } from "../../../tests/helpers/factories";
 import type { WeeklyContext } from "../context/build";
 import { type Brief, servingsFor } from "./brief";
 import { generateMenu, LlmError, RECIPE_MODEL, reviseMenu, reviseRecipe } from "./generate";
-import { buildMenuPrompt, buildReviseRecipePrompt, SYSTEM_PROMPT } from "./prompt";
+import { buildMenuPrompt, buildReviseRecipePrompt, systemPrompt } from "./prompt";
 
 const brief: Brief = {
   dinners: 4,
@@ -83,7 +83,7 @@ describe("buildMenuPrompt : profil du foyer", () => {
     expect(p).toContain("ALLERGIES (interdits absolus, aucune trace dans aucune recette) : arachides (Léa).");
     expect(p).toContain("Appareils disponibles (n'en suppose aucun autre) : four.");
     expect(p).toContain("30 min maximum");
-    expect(SYSTEM_PROMPT).toContain("allergies");
+    expect(systemPrompt("auchan")).toContain("allergies");
   });
 
   it("sans profil : rien de plus", () => {
@@ -106,7 +106,7 @@ describe("buildMenuPrompt : carte Waaoh", () => {
     expect(waaoh).toContain("- Filets de poulet : 6.00 € [50 % cagnottés sur le 2ème] → 3,00 € cagnottés pour 2 achetés");
     expect(waaoh).toContain("- Riz basmati : 2.00 € [10% Jour W! cagnottés] → 0,20 € cagnottés pour 1 acheté");
     expect(waaoh.indexOf("Filets de poulet")).toBeLessThan(waaoh.indexOf("Riz basmati"));
-    expect(SYSTEM_PROMPT).toContain("Waaoh");
+    expect(systemPrompt("auchan")).toContain("Waaoh");
   });
 
   it("n'ajoute pas de section Waaoh sans offre de cagnotte", () => {
@@ -186,9 +186,18 @@ describe("reviseMenu", () => {
   });
 });
 
-describe("SYSTEM_PROMPT", () => {
+describe("systemPrompt", () => {
   it("demande les étapes réalisables par les enfants", () => {
-    expect(SYSTEM_PROMPT).toContain("kidSteps");
+    expect(systemPrompt("auchan")).toContain("kidSteps");
+  });
+
+  it("nomme le Drive et son programme de fidélité", () => {
+    expect(systemPrompt("auchan")).toContain("Auchan Drive");
+    expect(systemPrompt("auchan")).toContain("carte Waaoh");
+    const leclerc = systemPrompt("leclerc");
+    expect(leclerc).toContain("Leclerc Drive");
+    expect(leclerc).toContain("carte E.Leclerc");
+    expect(leclerc).not.toMatch(/Auchan|Waaoh/);
   });
 });
 

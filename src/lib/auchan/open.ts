@@ -1,16 +1,15 @@
+import { NoStoreError } from "../drives/errors";
+import { sharedGate } from "../drives/gate";
+import type { OpenedStore } from "../drives/types";
 import type { StoreConnector } from "../types";
 import { hasStoreSession } from "./check";
 import { importChromeSession } from "./chrome-cookies";
 import { AuchanConnector } from "./connector";
-import { AuchanHttp, RequestGate } from "./http";
+import { AuchanHttp } from "./http";
 import { type AuchanSession, loadSession } from "./session";
 
-export class NoStoreError extends Error {
-  constructor() {
-    super("Auchan ne voit aucun drive : dans Chrome, connecte-toi sur auchan.fr et choisis ton drive, puis réessaie.");
-    this.name = "NoStoreError";
-  }
-}
+const NO_STORE_MESSAGE =
+  "Auchan ne voit aucun drive : dans Chrome, connecte-toi sur auchan.fr et choisis ton drive, puis réessaie.";
 
 export interface OpenAuchanDeps {
   importChrome(): { profile: string; cookies: number };
@@ -19,24 +18,10 @@ export interface OpenAuchanDeps {
   checkStore(connector: StoreConnector): Promise<boolean>;
 }
 
-export interface OpenedStore {
-  connector: StoreConnector;
-  source: "chrome" | "saved";
-  warnings: string[];
-}
-
-const globalForGate = globalThis as typeof globalThis & { __freshdriveAuchanGate?: RequestGate };
-
-/** Une seule porte pour tout le processus : au plus une requête toutes les 350 ms vers auchan.fr. */
-export function sharedGate(): RequestGate {
-  globalForGate.__freshdriveAuchanGate ??= new RequestGate();
-  return globalForGate.__freshdriveAuchanGate;
-}
-
 export const defaultOpenDeps: OpenAuchanDeps = {
   importChrome: () => importChromeSession(),
   loadSession: () => loadSession(),
-  makeConnector: (session) => new AuchanConnector(new AuchanHttp(session, { gate: sharedGate() }), session),
+  makeConnector: (session) => new AuchanConnector(new AuchanHttp(session, { gate: sharedGate("auchan") }), session),
   checkStore: (connector) => hasStoreSession(connector),
 };
 
@@ -57,6 +42,6 @@ export async function openAuchan(
   }
   const session = deps.loadSession();
   const connector = deps.makeConnector(session);
-  if (!(await deps.checkStore(connector))) throw new NoStoreError();
+  if (!(await deps.checkStore(connector))) throw new NoStoreError(NO_STORE_MESSAGE);
   return { connector, source, warnings };
 }

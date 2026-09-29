@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBackend } from "../../../tests/helpers/fake-backend";
 import { makeProduct, makeRecipe } from "../../../tests/helpers/factories";
 import { FakeConnector } from "../../../tests/helpers/fake-connector";
-import { SessionExpiredError } from "../auchan/http";
+import { SessionExpiredError } from "../drives/errors";
 import type { WeeklyContext } from "../context/build";
 import type { JobContext } from "../jobs/runner";
 import type { LlmBackend } from "../llm/backend";
@@ -104,6 +104,19 @@ describe("runCreateWeek", () => {
       "Génération des recettes (Claude (faux))",
       "Choix des produits Auchan",
       "Vérification des produits par Claude",
+    ]);
+  });
+
+  it("une semaine Leclerc nomme Leclerc dans ses étapes", async () => {
+    const backend = fakeBackend({ generateMenu: vi.fn(async () => menu()) });
+    const { id } = store.create({ ...brief, drive: "leclerc" }, new Date(2026, 8, 23, 12));
+    const job = jobRecorder();
+    await runCreateWeek(id, deps(backend, { useArbiter: false }), job);
+    expect(job.steps).toEqual([
+      "Connexion à Leclerc",
+      "Contexte de la semaine",
+      "Génération des recettes (Claude (faux))",
+      "Choix des produits Leclerc",
     ]);
   });
 
@@ -389,7 +402,7 @@ describe("runPush", () => {
     };
 
     await expect(runPush(id, pushDeps, job, () => new Date("2026-09-23T18:00:00.000Z"))).rejects.toThrow(
-      "Envoi interrompu : vérifie ton panier sur auchan.fr avant toute action. (Cause : disque plein)",
+      "Envoi interrompu : vérifie ton panier sur le site du Drive avant toute action. (Cause : disque plein)",
     );
     const week = store.get(id)!;
     expect(week.pushStartedAt).toBe("2026-09-23T18:00:00.000Z");
@@ -448,7 +461,7 @@ describe("runPush", () => {
     expect(week.pushStartedAt).toBe("2026-09-23T18:00:00.000Z");
     expect(week.pushReport?.added.map((l) => l.name)).toEqual(["Tomates"]);
     expect(week.pushReport?.failed.map((l) => l.name)).toEqual(["Pâtes", "Sel"]);
-    expect(week.pushReport?.failed[0].error).toMatch(/Session Auchan expirée/);
+    expect(week.pushReport?.failed[0].error).toMatch(/Session du Drive expirée/);
   });
 
   it("enregistre pushStartedAt avant le premier appel à setCartQuantities", async () => {

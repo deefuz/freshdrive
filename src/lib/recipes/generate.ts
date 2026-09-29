@@ -1,6 +1,7 @@
 import type Anthropic from "@anthropic-ai/sdk";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { WeeklyContext } from "../context/build";
+import { driveOf } from "../drives/drive";
 import { buildVisualsPrompt, type DrawnVisual, VisualsSchema } from "../illustrate";
 import type { Brief } from "./brief";
 import {
@@ -8,7 +9,7 @@ import {
   buildRevisePrompt,
   buildReviseRecipePrompt,
   type MenuPromptOptions,
-  SYSTEM_PROMPT,
+  systemPrompt,
 } from "./prompt";
 import { MenuSchema, type Recipe, RecipeSchema } from "./schema";
 
@@ -28,13 +29,13 @@ export function unwrapParsed<T>(r: { stop_reason: string | null; parsed_output: 
   return r.parsed_output;
 }
 
-async function askMenu(client: Anthropic, prompt: string): Promise<Recipe[]> {
+async function askMenu(client: Anthropic, brief: Brief, prompt: string): Promise<Recipe[]> {
   const response = await client.messages.parse({
     model: RECIPE_MODEL,
     max_tokens: 16000,
     thinking: { type: "adaptive" },
     output_config: { effort: "high", format: zodOutputFormat(MenuSchema) },
-    system: SYSTEM_PROMPT,
+    system: systemPrompt(driveOf(brief)),
     messages: [{ role: "user", content: prompt }],
   });
   return unwrapParsed(response).recipes;
@@ -46,7 +47,7 @@ export function generateMenu(
   ctx: WeeklyContext,
   options: MenuPromptOptions = {},
 ): Promise<Recipe[]> {
-  return askMenu(client, buildMenuPrompt(brief, ctx, options));
+  return askMenu(client, brief, buildMenuPrompt(brief, ctx, options));
 }
 
 export function reviseMenu(
@@ -56,7 +57,7 @@ export function reviseMenu(
   recipes: Recipe[],
   instruction: string,
 ): Promise<Recipe[]> {
-  return askMenu(client, buildRevisePrompt(brief, ctx, recipes, instruction));
+  return askMenu(client, brief, buildRevisePrompt(brief, ctx, recipes, instruction));
 }
 
 export async function reviseRecipe(
@@ -72,7 +73,7 @@ export async function reviseRecipe(
     max_tokens: 8000,
     thinking: { type: "adaptive" },
     output_config: { effort: "high", format: zodOutputFormat(RecipeSchema) },
-    system: SYSTEM_PROMPT,
+    system: systemPrompt(driveOf(brief)),
     messages: [{ role: "user", content: buildReviseRecipePrompt(brief, ctx, recipe, others, instruction) }],
   });
   return { ...unwrapParsed(response), id: recipe.id };

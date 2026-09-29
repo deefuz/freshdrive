@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const IngredientSchema = z.object({
   name: z.string().describe("nom générique en français, ex. « tomates cerises »"),
-  searchQuery: z.string().describe("requête courte (1 à 3 mots) pour le moteur de recherche Auchan, ex. « tomates cerises »"),
+  searchQuery: z.string().describe("requête courte (1 à 3 mots) pour le moteur de recherche du Drive, ex. « tomates cerises »"),
   quantity: z.number().describe("quantité totale pour la recette, au nombre de portions indiqué"),
   unit: z.enum(["g", "ml", "pce"]),
   pantryStaple: z.boolean().describe("true pour les basiques de placard : sel, poivre, huile, vinaigre, épices, farine, sucre"),

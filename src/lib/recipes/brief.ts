@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DRIVE_IDS } from "../drives/drive";
 import { ProfileSchema } from "../profile/profile";
 
 export const DIET_FILTERS = ["kids_friendly", "low_calorie", "vegan", "unprocessed"] as const;
@@ -14,6 +15,8 @@ export const BriefSchema = z.object({
   preferOrganic: z.boolean(),
   /** profil du foyer au moment de la création de la semaine (allergies, matériel, habitudes) */
   profile: ProfileSchema.optional(),
+  /** Drive de la semaine ; absent pour les semaines créées avant le choix de l'enseigne (Auchan, voir driveOf) */
+  drive: z.enum(DRIVE_IDS).optional(),
 });
 export type Brief = z.infer<typeof BriefSchema>;
 

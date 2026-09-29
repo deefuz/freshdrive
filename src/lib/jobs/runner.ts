@@ -86,7 +86,7 @@ export class JobRunner {
 }
 
 /** Envoi au panier arrêté en cours de route : des lignes ont peut-être déjà été écrites, ne pas relancer à l'aveugle. */
-export const PUSH_INTERRUPTED_MESSAGE = "Envoi interrompu : vérifie ton panier sur auchan.fr avant toute action.";
+export const PUSH_INTERRUPTED_MESSAGE = "Envoi interrompu : vérifie ton panier sur le site du Drive avant toute action.";
 
 /** Message d'une tâche coupée par un redémarrage du serveur. */
 export function interruptedJobMessage(kind: JobKind): string {

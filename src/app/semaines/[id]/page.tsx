@@ -9,6 +9,7 @@ import { btn, notice, pageTitle, sectionTitle } from "@/app/_components/ui";
 import { addRecipesAction, deleteWeekAction, retryCreateAction } from "@/app/actions";
 import { getApp } from "@/lib/app/instance";
 import { ADD_RECIPES_COUNT, MAX_WEEK_RECIPES } from "@/lib/app/service";
+import { DRIVES, driveOf } from "@/lib/drives/drive";
 import { formatWeekDate, JOB_LABELS } from "@/lib/format";
 import { isPrintable } from "@/lib/print/sheet";
 import { productRows, weekTotals } from "@/lib/week/edit";
@@ -24,6 +25,7 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
   const app = getApp();
   const week = app.getWeek(id);
   if (!week) notFound();
+  const drive = DRIVES[driveOf(week.brief)];
 
   const view = weekView(week);
   const heading = <h1 className={pageTitle}>Semaine du {formatWeekDate(week.id)}</h1>;
@@ -76,7 +78,7 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
         )}
       </div>
       {week.contextSummary && (
-        <p className="-mt-3 max-w-[75ch] text-sm text-graphite">Contexte Auchan : {week.contextSummary}</p>
+        <p className="-mt-3 max-w-[75ch] text-sm text-graphite">Contexte {drive.label} : {week.contextSummary}</p>
       )}
       {week.job?.status === "error" && (
         <p role="alert" className={notice.error}>
@@ -90,13 +92,13 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
       ))}
       {week.status === "pushed" && (
         <p role="status" className={notice.info}>
-          Panier déjà envoyé : ces modifications ne changent plus ton panier Auchan.
+          Panier déjà envoyé : ces modifications ne changent plus ton panier {drive.label}.
         </p>
       )}
       {week.pushStartedAt && week.status !== "pushed" && (
         <p role="alert" className={notice.warning}>
           Un envoi au panier a déjà été lancé pour cette semaine (peut-être interrompu) : vérifie ton panier sur
-          auchan.fr avant toute action.
+          {drive.siteHost} avant toute action.
         </p>
       )}
       {/* les illustrations arrivent en arrière-plan : la page se recharge jusqu'à la fin du dessin */}
@@ -107,6 +109,7 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
         selected={week.selectedRecipeIds.length}
         dinners={week.brief.dinners}
         pushed={week.status === "pushed"}
+        loyaltyCard={drive.loyalty.card}
       />
       <section>
         <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
@@ -146,7 +149,7 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
           </div>
         )}
       </section>
-      <ProductList weekId={week.id} rows={productRows(week)} />
+      <ProductList weekId={week.id} rows={productRows(week)} drive={drive} />
       <section className="space-y-2 border-t border-oat-line pt-6">
         <ConfirmActionButton
           action={deleteWeekAction.bind(null, week.id, true)}
@@ -155,7 +158,7 @@ export default async function WeekPage({ params }: { params: Promise<{ id: strin
           pendingLabel="Suppression…"
         />
         <p className="text-sm text-pebble">
-          La semaine est déplacée dans data/weeks/corbeille (récupérable). Ton panier Auchan n&apos;est pas modifié.
+          La semaine est déplacée dans data/weeks/corbeille (récupérable). Ton panier {drive.label} n&apos;est pas modifié.
         </p>
       </section>
     </div>

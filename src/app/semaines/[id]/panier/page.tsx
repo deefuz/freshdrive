@@ -7,6 +7,7 @@ import { card, link, notice, pageTitle } from "@/app/_components/ui";
 import { confirmPushAction } from "@/app/actions";
 import { getApp } from "@/lib/app/instance";
 import { type PushPreview, previewPush } from "@/lib/cart/push";
+import { DRIVES, driveOf } from "@/lib/drives/drive";
 import { formatEur, formatWeekDate } from "@/lib/format";
 import { weekTotals } from "@/lib/week/edit";
 import { cartView } from "@/lib/week/view";
@@ -18,6 +19,7 @@ export default async function CartPage({ params }: { params: Promise<{ id: strin
   const app = getApp();
   const week = app.getWeek(id);
   if (!week) notFound();
+  const drive = DRIVES[driveOf(week.brief)];
 
   const view = cartView(week);
   const header = (
@@ -25,7 +27,7 @@ export default async function CartPage({ params }: { params: Promise<{ id: strin
       <Link href={`/semaines/${week.id}`} className={`${link} text-sm`}>
         ← Retour à la semaine
       </Link>
-      <h1 className={pageTitle}>Panier Auchan</h1>
+      <h1 className={pageTitle}>Panier {drive.label}</h1>
       <p className="-mt-3 text-graphite">Semaine du {formatWeekDate(week.id)}</p>
     </>
   );
@@ -42,7 +44,7 @@ export default async function CartPage({ params }: { params: Promise<{ id: strin
     return (
       <div className="space-y-4">
         {header}
-        <PushReportView report={week.pushReport} />
+        <PushReportView report={week.pushReport} drive={drive} />
       </div>
     );
   }
@@ -56,14 +58,14 @@ export default async function CartPage({ params }: { params: Promise<{ id: strin
   }
 
   // Envoi déjà lancé pour cette semaine (peut-être interrompu) : le service refuse un nouvel envoi ;
-  // pas la peine de lire le panier Auchan ni de proposer un bouton de confirmation.
+  // pas la peine de lire le panier du Drive ni de proposer un bouton de confirmation.
   if (week.pushStartedAt) {
     return (
       <div className="space-y-4">
         {header}
         <p role="alert" className={notice.warning}>
           Un envoi au panier a déjà été lancé pour cette semaine (peut-être interrompu). Vérifie ton panier sur
-          auchan.fr avant toute action.
+          {drive.siteHost} avant toute action.
         </p>
       </div>
     );
@@ -79,7 +81,7 @@ export default async function CartPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  // Une tâche (sur une autre semaine) est en cours : elle occupe la session Auchan, on évite de la solliciter.
+  // Une tâche (sur une autre semaine) est en cours : elle occupe peut-être la session du Drive, on évite de la solliciter.
   if (app.runner.isBusy()) {
     return (
       <div className="space-y-4">
@@ -94,7 +96,7 @@ export default async function CartPage({ params }: { params: Promise<{ id: strin
   let preview: PushPreview | null = null;
   let error: string | null = null;
   try {
-    const connector = await app.openStore();
+    const connector = await app.openStore(drive.id);
     preview = previewPush(await connector.getCart(), basket.lines);
   } catch (e) {
     error = (e as Error).message;
@@ -110,17 +112,17 @@ export default async function CartPage({ params }: { params: Promise<{ id: strin
       )}
       {!preview ? (
         <div className="rounded bg-bordeaux-wash p-5 text-bordeaux">
-          <p className="font-bold">Impossible de lire ton panier Auchan.</p>
+          <p className="font-bold">Impossible de lire ton panier {drive.label}.</p>
           <p className="text-sm">{error}</p>
           <p className="mt-2 text-sm">
-            Vérifie que tu es connecté sur auchan.fr dans Chrome, avec ton drive choisi, puis recharge la page.
+            Vérifie que tu es connecté sur {drive.siteHost} dans Chrome, avec ton drive choisi, puis recharge la page.
           </p>
         </div>
       ) : (
         <>
           <p className="max-w-[70ch] text-graphite">
             Voici ce que FreshDrive va mettre dans ton panier. Les quantités s&apos;ajoutent à ce qui s&apos;y trouve déjà.
-            FreshDrive ne passe jamais commande : tu finaliseras sur auchan.fr.
+            FreshDrive ne passe jamais commande : tu finaliseras sur {drive.siteHost}.
           </p>
           <div className={`${card} overflow-x-auto`}>
             <table className="w-full text-sm">

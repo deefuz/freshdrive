@@ -2,8 +2,9 @@ import { card, link, sectionTitle } from "@/app/_components/ui";
 import { formatEur, formatQty, productLabel } from "@/lib/format";
 import type { ProductRow } from "@/lib/week/edit";
 import { PantryToggle, ProductPicker } from "./week-controls";
+import type { DriveInfo } from "@/lib/drives/drive";
 
-export function ProductList({ weekId, rows }: { weekId: string; rows: ProductRow[] }) {
+export function ProductList({ weekId, rows, drive }: { weekId: string; rows: ProductRow[]; drive: DriveInfo }) {
   if (!rows.length) return null;
   return (
     <section>
@@ -23,11 +24,12 @@ export function ProductList({ weekId, rows }: { weekId: string; rows: ProductRow
                 <ProductPicker
                   weekId={weekId}
                   ingredientKey={row.key}
+                  driveLabel={drive.label}
                   value={row.chosen?.product.productId ?? ""}
                   options={row.options.map((c) => ({ productId: c.product.productId, label: productLabel(c.product) }))}
                 />
               ) : (
-                <p className="text-sm font-medium text-honey-ink">Aucun produit trouvé chez Auchan</p>
+                <p className="text-sm font-medium text-honey-ink">Aucun produit trouvé chez {drive.label}</p>
               )}
               {row.chosen?.product.url && (
                 <a
@@ -36,7 +38,7 @@ export function ProductList({ weekId, rows }: { weekId: string; rows: ProductRow
                   rel="noreferrer"
                   className={`${link} mt-1 inline-block text-xs`}
                 >
-                  Voir sur auchan.fr
+                  Voir sur {drive.siteHost}
                 </a>
               )}
             </div>

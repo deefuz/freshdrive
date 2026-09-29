@@ -9,12 +9,15 @@ export function BudgetBar({
   selected,
   dinners,
   pushed,
+  loyaltyCard,
 }: {
   weekId: string;
   totals: WeekTotals;
   selected: number;
   dinners: number;
   pushed: boolean;
+  /** « carte Waaoh », « carte E.Leclerc » */
+  loyaltyCard: string;
 }) {
   const pct = Math.min(100, Math.round((totals.net / totals.budget) * 100));
   return (
@@ -70,7 +73,7 @@ export function BudgetBar({
         {totals.promoSaved > 0 && (
           <span className="font-bold text-basil">Économies promos : {formatEur(totals.promoSaved)}</span>
         )}
-        {totals.loyalty > 0 && <span>Cagnotte Waaoh : {formatEur(totals.loyalty)}</span>}
+        {totals.loyalty > 0 && <span>Fidélité ({loyaltyCard}) : {formatEur(totals.loyalty)}</span>}
         {totals.basket.missing.length > 0 && (
           <span className="text-honey-ink">Introuvables : {totals.basket.missing.join(", ")}</span>
         )}

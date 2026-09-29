@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import { makeProduct } from "../../../tests/helpers/factories";
 import { FakeConnector } from "../../../tests/helpers/fake-connector";
-import { NoStoreError, openAuchan, type OpenAuchanDeps } from "./open";
+import { NoStoreError } from "../drives/errors";
+import { openAuchan, type OpenAuchanDeps } from "./open";
 import { SessionMissingError } from "./session";
 
 function deps(overrides: Partial<OpenAuchanDeps> = {}): OpenAuchanDeps {

@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fakeBackend } from "../../../tests/helpers/fake-backend";
 import { makeProduct, makeRecipe, makeWeek } from "../../../tests/helpers/factories";
 import { FakeConnector } from "../../../tests/helpers/fake-connector";
-import { NoStoreError } from "../auchan/open";
+import { NoStoreError } from "../drives/errors";
 import type { WeeklyContext } from "../context/build";
 import type { LlmBackend } from "../llm/backend";
 import type { Brief } from "../recipes/brief";
@@ -61,11 +61,15 @@ function setup(backend: LlmBackend = fakeBackend({ generateMenu: vi.fn(async () 
     store,
     favorites,
     backend: () => backend,
-    openAuchan: async () => ({ connector, source: "chrome", warnings: [] }),
+    openStore: async () => ({ connector, source: "chrome", warnings: [] }),
     loadContext: async () => ctx,
     now: () => new Date("2026-09-23T10:00:00.000Z"),
     ...overrides,
   });
+  // connexions vérifiées depuis l'accueil : préalable à toute nouvelle semaine
+  for (const drive of ["auchan", "leclerc"] as const) {
+    app.sessions[drive] = { ok: true, message: "Session reprise de Chrome, drive détecté.", checkedAt: "2026-09-23T09:00:00.000Z" };
+  }
   return { app, store, favorites, connector };
 }
 
@@ -79,7 +83,31 @@ describe("FreshDriveApp", () => {
     const done = app.getWeek(week.id)!;
     expect(done).toMatchObject({ status: "ready", selectedRecipeIds: ["pates"] });
     expect(done.job).toMatchObject({ status: "done", step: "Terminé" });
-    expect(app.session).toMatchObject({ ok: true, message: "Session reprise de Chrome, drive détecté." });
+    expect(app.sessions.auchan).toMatchObject({ ok: true, checkedAt: "2026-09-23T10:00:00.000Z" });
+  });
+
+  it("une semaine Leclerc ouvre Leclerc Drive, avec le contexte et l'état de connexion de Leclerc", async () => {
+    const connector = new FakeConnector({ pates: [makeProduct({ name: "Pâtes", price: 1, pack: { value: 500, unit: "g" } })] });
+    const openStore = vi.fn<AppDeps["openStore"]>(async () => ({ connector, source: "chrome", warnings: [] }));
+    const loadContext = vi.fn<AppDeps["loadContext"]>(async () => ctx);
+    const { app } = setup(undefined, { openStore, loadContext });
+    const week = app.startCreateWeek({ ...brief, drive: "leclerc" });
+    await app.runner.idle();
+    expect(app.getWeek(week.id)!.status).toBe("ready");
+    expect(openStore.mock.calls).toEqual([["leclerc"]]);
+    expect(loadContext.mock.calls.map(([, drive]) => drive)).toEqual(["leclerc"]);
+    expect(app.sessions.leclerc).toMatchObject({ ok: true });
+  });
+
+  it("startCreateWeek refuse un Drive dont la connexion n'est pas vérifiée", () => {
+    const { app, store } = setup();
+    app.sessions.leclerc = null;
+    expect(app.verifiedDrives()).toEqual(["auchan"]);
+    expect(() => app.startCreateWeek({ ...brief, drive: "leclerc" })).toThrow(/Vérifie d'abord ta connexion à Leclerc Drive/);
+    app.sessions.auchan = { ok: false, message: "expirée", checkedAt: "2026-09-23T09:00:00.000Z" };
+    expect(() => app.startCreateWeek(brief)).toThrow(/Auchan Drive/);
+    expect(app.verifiedDrives()).toEqual([]);
+    expect(store.list()).toEqual([]);
   });
 
   it("dessine les recettes en arrière-plan une fois la semaine prête, et signale les dessins manqués", async () => {
@@ -127,14 +155,14 @@ describe("FreshDriveApp", () => {
   });
 
   it("startPush refuse un envoi déjà lancé mais interrompu (pushStartedAt sans statut pushed)", async () => {
-    const openAuchan = vi.fn<AppDeps["openAuchan"]>(async () => {
+    const openStore = vi.fn<AppDeps["openStore"]>(async () => {
       throw new Error("ne doit pas être appelé");
     });
-    const { app, store } = setup(undefined, { openAuchan });
+    const { app, store } = setup(undefined, { openStore });
     store.save(makeWeek({ status: "ready", pushStartedAt: "2026-09-23T09:00:00.000Z" }));
     expect(() => app.startPush("2026-09-23-1")).toThrow(/déjà été lancé/);
     await app.runner.idle();
-    expect(openAuchan).not.toHaveBeenCalled();
+    expect(openStore).not.toHaveBeenCalled();
     expect(app.runner.current()).toBeNull();
   });
 
@@ -274,13 +302,15 @@ describe("FreshDriveApp", () => {
 
   it("checkSession enregistre un échec avec son message", async () => {
     const { app } = setup(undefined, {
-      openAuchan: async () => {
-        throw new NoStoreError();
+      openStore: async () => {
+        throw new NoStoreError("Leclerc ne voit aucun drive.");
       },
     });
-    const status = await app.checkSession();
+    const status = await app.checkSession("leclerc");
     expect(status.ok).toBe(false);
     expect(status.message).toMatch(/aucun drive/);
+    expect(app.sessions.leclerc).toBe(status);
+    expect(app.sessions.auchan).toMatchObject({ ok: true });
   });
 
   it("setFavorite : étoile une recette de la semaine, puis la retire", async () => {

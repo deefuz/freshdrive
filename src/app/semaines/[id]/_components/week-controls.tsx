@@ -66,11 +66,14 @@ export function RecipeToggle({
 export function ProductPicker({
   weekId,
   ingredientKey,
+  driveLabel,
   value,
   options,
 }: {
   weekId: string;
   ingredientKey: string;
+  /** « Auchan », « Leclerc » */
+  driveLabel: string;
   value: string;
   options: { productId: string; label: string }[];
 }) {
@@ -78,7 +81,7 @@ export function ProductPicker({
   return (
     <div>
       <select
-        aria-label="Produit Auchan"
+        aria-label={`Produit ${driveLabel}`}
         value={value}
         disabled={pending}
         onChange={(e) => {

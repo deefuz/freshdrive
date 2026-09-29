@@ -27,6 +27,7 @@ const FIELD_LABELS: Record<string, string> = {
   filters: "les contraintes",
   notes: "les précisions",
   preferOrganic: "le bio",
+  drive: "le Drive",
 };
 
 export type BriefFormResult = { ok: true; brief: Brief } | { ok: false; error: string };
@@ -51,6 +52,7 @@ export function parseBriefForm(form: FormData): BriefFormResult {
       .trim()
       .slice(0, 1000),
     preferOrganic: form.get("preferOrganic") === "on",
+    drive: form.get("drive") ?? undefined,
   });
   if (result.success) return { ok: true, brief: result.data };
   const fields = [...new Set(result.error.issues.map((i) => String(i.path[0])))];

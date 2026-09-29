@@ -2,8 +2,9 @@ import Link from "next/link";
 import { connection } from "next/server";
 import { badge, btn, card, link, pageTitle, sectionTitle } from "@/app/_components/ui";
 import { getApp } from "@/lib/app/instance";
-import { rankWaaohOffers } from "@/lib/budget/promo";
-import { readCachedContext } from "@/lib/context/cache";
+import { rankLoyaltyOffers } from "@/lib/budget/promo";
+import { contextCachePath, readCachedContext } from "@/lib/context/cache";
+import { DRIVES, driveOf } from "@/lib/drives/drive";
 import { formatEur, formatWeekDate } from "@/lib/format";
 import { spendingStats, type WeekSpend } from "@/lib/week/stats";
 
@@ -62,7 +63,7 @@ function SpendChart({ weeks }: { weeks: WeekSpend[] }) {
                   <span>Économies promos</span> <span className="tabular-nums">{formatEur(w.promoSaved)}</span>
                 </p>
                 <p className="flex justify-between">
-                  <span>Cagnotte Waaoh</span> <span className="tabular-nums">{formatEur(w.loyalty)}</span>
+                  <span>Fidélité</span> <span className="tabular-nums">{formatEur(w.loyalty)}</span>
                 </p>
                 <p className="flex justify-between">
                   <span>Budget</span> <span className="tabular-nums">{formatEur(w.budget)}</span>
@@ -88,7 +89,7 @@ function SpendChart({ weeks }: { weeks: WeekSpend[] }) {
                 <th className="px-3 py-2">Semaine</th>
                 <th className="px-3 py-2 text-right">Payé</th>
                 <th className="px-3 py-2 text-right">Promos</th>
-                <th className="px-3 py-2 text-right">Waaoh</th>
+                <th className="px-3 py-2 text-right">Fidélité</th>
                 <th className="px-3 py-2 text-right">Budget</th>
               </tr>
             </thead>
@@ -116,9 +117,11 @@ function SpendChart({ weeks }: { weeks: WeekSpend[] }) {
 
 export default async function SpendingPage() {
   await connection();
-  const stats = spendingStats(getApp().listWeeks());
-  const context = readCachedContext();
-  const offers = context ? rankWaaohOffers(context.promos).slice(0, 8) : [];
+  const app = getApp();
+  const stats = spendingStats(app.listWeeks());
+  const drive = DRIVES[driveOf(app.store.latestBrief() ?? {})];
+  const context = readCachedContext(contextCachePath(drive.id));
+  const offers = context ? rankLoyaltyOffers(context.promos).slice(0, 8) : [];
   const withinBudget = stats.weeks.filter((w) => w.net <= w.budget).length;
 
   return (
@@ -128,7 +131,7 @@ export default async function SpendingPage() {
         <p className="max-w-[70ch] text-graphite">
           {stats.weeks.length
             ? `${stats.weeks.length} semaine${stats.weeks.length > 1 ? "s" : ""} envoyée${stats.weeks.length > 1 ? "s" : ""} au panier depuis le ${formatWeekDate(stats.weeks[0].id)}. Montants estimés d'après le panier de chaque semaine.`
-            : "Les dépenses apparaîtront ici dès qu'une semaine aura été envoyée au panier Auchan."}
+            : "Les dépenses apparaîtront ici dès qu'une semaine aura été envoyée au panier de ton Drive."}
         </p>
       </div>
 
@@ -137,7 +140,7 @@ export default async function SpendingPage() {
           <section aria-label="Cumul" className="grid grid-cols-2 gap-6 rounded bg-oat px-6 py-5 md:grid-cols-4">
             <Figure value={formatEur(stats.totals.net)} label={`payés sur ${formatEur(stats.totals.budget)} de budget`} />
             <Figure value={formatEur(stats.totals.promoSaved)} label="économisés grâce aux promos" tone="text-basil" />
-            <Figure value={formatEur(stats.totals.loyalty)} label="cagnottés sur la carte Waaoh" tone="text-basil" />
+            <Figure value={formatEur(stats.totals.loyalty)} label="crédités sur tes cartes de fidélité" tone="text-basil" />
             <Figure value={`${withinBudget}/${stats.weeks.length}`} label="semaines dans le budget" />
           </section>
 
@@ -160,7 +163,7 @@ export default async function SpendingPage() {
 
       <div className="grid gap-10 lg:grid-cols-[1.4fr_1fr]">
         <section className="space-y-4">
-          <h2 className={sectionTitle}>Mes produits Auchan préférés</h2>
+          <h2 className={sectionTitle}>Mes produits préférés</h2>
           {stats.products.length ? (
             <ol className={`${card} divide-y divide-oat-line`}>
               {stats.products.slice(0, 12).map((p, i) => (
@@ -177,7 +180,7 @@ export default async function SpendingPage() {
                         <span
                           className={`${badge} ml-2 ${p.product.promo.kind === "loyalty" ? "bg-basil text-paper" : "bg-beet text-paper"}`}
                         >
-                          {p.product.promo.kind === "loyalty" ? "Waaoh" : "Promo"}
+                          {p.product.promo.kind === "loyalty" ? "Fidélité" : "Promo"}
                         </span>
                       )}
                     </p>
@@ -194,8 +197,8 @@ export default async function SpendingPage() {
         <section className="space-y-4">
           <h2 className={sectionTitle}>Cagnotter cette semaine</h2>
           <p className="text-sm text-graphite">
-            Les offres Waaoh du moment qui rapportent le plus. FreshDrive les propose à Claude pour les recettes et les
-            préfère à prix égal quand il choisit les produits.
+            Les offres {drive.name} du moment qui rapportent le plus sur la {drive.loyalty.card}. FreshDrive les propose
+            à Claude pour les recettes et les préfère à prix égal quand il choisit les produits.
           </p>
           {offers.length ? (
             <ul className={`${card} divide-y divide-oat-line`}>
@@ -221,7 +224,7 @@ export default async function SpendingPage() {
             </ul>
           ) : (
             <p className="text-sm text-graphite">
-              Les offres Waaoh seront chargées avec le contexte de la prochaine semaine.
+              Les offres {drive.name} seront chargées avec le contexte de la prochaine semaine.
             </p>
           )}
         </section>

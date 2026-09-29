@@ -16,7 +16,7 @@ export const ChoicesSchema = z.object({
 });
 
 export function buildArbiterPrompt(items: ArbiterItem[]): string {
-  return `Pour chaque ingrédient de recette, choisis parmi les produits Auchan proposés celui qui EST cet ingrédient, à acheter pour cuisiner (pas un plat préparé, une sauce ou un dérivé, sauf si l'ingrédient en est un).
+  return `Pour chaque ingrédient de recette, choisis parmi les produits du Drive proposés celui qui EST cet ingrédient, à acheter pour cuisiner (pas un plat préparé, une sauce ou un dérivé, sauf si l'ingrédient en est un).
 Méfie-toi des formes transformées (émincé, en rondelles, en dés, râpé, surgelé, en conserve, cuisiné…) et des variétés différentes (chèvre au lieu de vache, fumé, aromatisé…) quand l'ingrédient ne les demande pas.
 Réponds avec l'index (0 = premier produit) ; -1 si aucun ne convient. Les produits sont déjà triés du meilleur rapport qualité-prix au moins bon : à pertinence égale, prends le plus petit index.
 

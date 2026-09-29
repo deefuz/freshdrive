@@ -1,3 +1,5 @@
+import { SessionExpiredError } from "../drives/errors";
+import { RequestGate } from "../drives/gate";
 import { BASE_URL } from "./parse";
 import type { AuchanSession } from "./session";
 
@@ -20,34 +22,7 @@ export class AuchanHttpError extends Error {
   }
 }
 
-export class SessionExpiredError extends Error {
-  constructor() {
-    super("Session Auchan expirée. Relance : npm run auchan:login");
-    this.name = "SessionExpiredError";
-  }
-}
-
-/** Espacement minimal entre deux requêtes ; partageable entre plusieurs clients pour un débit global. */
-export class RequestGate {
-  private last = Number.NEGATIVE_INFINITY;
-  private queue: Promise<void> = Promise.resolve();
-
-  constructor(
-    private readonly minIntervalMs: number = 350,
-    private readonly now: () => number = Date.now,
-    private readonly sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
-  ) {}
-
-  wait(): Promise<void> {
-    const turn = this.queue.then(async () => {
-      const wait = this.last + this.minIntervalMs - this.now();
-      if (wait > 0) await this.sleep(wait);
-      this.last = this.now();
-    });
-    this.queue = turn.catch(() => undefined);
-    return turn;
-  }
-}
+const expired = () => new SessionExpiredError("Session Auchan expirée : reconnecte-toi sur auchan.fr dans Chrome puis relance.");
 
 interface Options {
   fetchFn?: typeof fetch;
@@ -81,9 +56,9 @@ export class AuchanHttp implements HttpClient {
         ...extraHeaders,
       },
     });
-    if (res.status === 401 || res.status === 403) throw new SessionExpiredError();
+    if (res.status === 401 || res.status === 403) throw expired();
     if (!res.ok) throw new AuchanHttpError(res.status, path);
-    if (res.redirected && /login|connexion|identification|auth/i.test(res.url)) throw new SessionExpiredError();
+    if (res.redirected && /login|connexion|identification|auth/i.test(res.url)) throw expired();
     return res;
   }
 
@@ -98,7 +73,7 @@ export class AuchanHttp implements HttpClient {
       { method: "GET" },
       { Accept: "application/json", "X-Requested-With": "XMLHttpRequest" },
     );
-    if (!(res.headers.get("content-type") ?? "").includes("json")) throw new SessionExpiredError();
+    if (!(res.headers.get("content-type") ?? "").includes("json")) throw expired();
     return (await res.json()) as T;
   }
 

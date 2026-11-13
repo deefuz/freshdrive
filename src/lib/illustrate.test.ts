@@ -84,4 +84,19 @@ describe("illustrateRecipes", () => {
     expect(await illustrateRecipes([], draw, dir())).toEqual({ drawn: [], rejected: [] });
     expect(draw).not.toHaveBeenCalled();
   });
+
+  it("prend une photo Pexels quand il y en a une, et ne dessine que le reste", async () => {
+    const d = dir();
+    const recipes = [makeRecipe({ id: "a", title: "Pizza" }), makeRecipe({ id: "b", title: "Soupe" })];
+    const findPhoto = vi.fn(async (title: string) =>
+      title === "Pizza" ? { bytes: Buffer.from([1, 2]), photographer: "Ada", pageUrl: "https://pexels.com/photo/1" } : null,
+    );
+    const draw = vi.fn(async () => [{ recipeId: "b", svg: svg() }]);
+    const result = await illustrateRecipes(recipes, draw, d, findPhoto);
+    expect(draw).toHaveBeenCalledWith([recipes[1]]);
+    expect(result).toEqual({ drawn: ["Pizza", "Soupe"], rejected: [] });
+    expect(fs.existsSync(path.join(d, "pizza.jpg"))).toBe(true);
+    expect(JSON.parse(fs.readFileSync(path.join(d, "pizza.json"), "utf8")).photographer).toBe("Ada");
+    expect(fs.existsSync(path.join(d, "soupe.svg"))).toBe(true);
+  });
 });

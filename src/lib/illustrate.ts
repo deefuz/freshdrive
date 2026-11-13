@@ -2,7 +2,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import type { Recipe } from "./recipes/schema";
-import { hasVisual, VISUALS_DIR, writeVisual } from "./visuals";
+import type { PexelsPhoto } from "./pexels";
+import { hasVisual, VISUALS_DIR, writePhoto, writeVisual } from "./visuals";
 
 /** Réponse attendue de Claude : un SVG par recette. */
 export const VisualsSchema = z.object({
@@ -95,11 +96,15 @@ export interface IllustrateResult {
   error?: string;
 }
 
-/** Dessine les recettes qui n'ont pas encore de visuel (une fois par titre) et enregistre les SVG valides. */
+/**
+ * Crée les visuels des recettes qui n'en ont pas encore (une fois par titre) : une photo Pexels si `findPhoto`
+ * en trouve une, sinon un SVG dessiné par Claude (seuls les SVG valides sont enregistrés).
+ */
 export async function illustrateRecipes(
   recipes: Recipe[],
   draw: (recipes: Recipe[]) => Promise<DrawnVisual[]>,
   dir: string = VISUALS_DIR,
+  findPhoto?: (title: string) => Promise<PexelsPhoto | null>,
 ): Promise<IllustrateResult> {
   const seen = new Set<string>();
   const missing = recipes.filter((r) => {
@@ -108,9 +113,22 @@ export async function illustrateRecipes(
     return true;
   });
   const result: IllustrateResult = { drawn: [], rejected: [] };
+  let toDraw = missing;
+  if (findPhoto) {
+    toDraw = [];
+    for (const r of missing) {
+      const photo = await findPhoto(r.title);
+      if (photo) {
+        writePhoto(r.title, photo, dir);
+        result.drawn.push(r.title);
+      } else {
+        toDraw.push(r);
+      }
+    }
+  }
   // par petits lots, enregistrés au fur et à mesure : un lot en échec ne fait pas perdre les autres
-  for (let i = 0; i < missing.length; i += ILLUSTRATION_BATCH) {
-    const batch = missing.slice(i, i + ILLUSTRATION_BATCH);
+  for (let i = 0; i < toDraw.length; i += ILLUSTRATION_BATCH) {
+    const batch = toDraw.slice(i, i + ILLUSTRATION_BATCH);
     let drawnById = new Map<string, string>();
     try {
       drawnById = new Map((await draw(batch)).map((v) => [v.recipeId, v.svg]));

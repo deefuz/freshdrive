@@ -2,6 +2,7 @@ import { contextCachePath, loadWeeklyContext } from "../context/cache";
 import { openDrive } from "../drives/open";
 import { illustrateRecipes } from "../illustrate";
 import { selectBackend } from "../llm/backend";
+import { fetchPexelsPhoto } from "../pexels";
 import { FavoriteStore } from "../store/favorites";
 import { WeekStore } from "../store/weeks";
 import { FreshDriveApp } from "./service";
@@ -23,7 +24,7 @@ export function getApp(): FreshDriveApp {
     illustrate:
       process.env.FRESHDRIVE_VISUELS === "non"
         ? undefined
-        : (recipes) => illustrateRecipes(recipes, (batch) => selectBackend().drawVisuals(batch)),
+        : (recipes) => illustrateRecipes(recipes, (batch) => selectBackend().drawVisuals(batch), undefined, fetchPexelsPhoto),
   });
   return globalForApp.__freshdriveApp;
 }

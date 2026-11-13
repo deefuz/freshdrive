@@ -12,6 +12,7 @@ import { openDrive } from "@/lib/drives/open";
 import type { JobContext } from "@/lib/jobs/runner";
 import { formatEur } from "@/lib/format";
 import { illustrateRecipes } from "@/lib/illustrate";
+import { fetchPexelsPhoto } from "@/lib/pexels";
 import { selectBackend } from "@/lib/llm/backend";
 import { ProfileStore } from "@/lib/profile/store";
 import { type Brief, BriefSchema } from "@/lib/recipes/brief";
@@ -123,7 +124,12 @@ async function main() {
   await runCreateWeek(created.id, deps, cliJob, opts);
   if (!has("--no-visuels")) {
     step("Illustrations des recettes");
-    const drawn = await illustrateRecipes(store.get(created.id)!.recipes, (batch) => backend.drawVisuals(batch));
+    const drawn = await illustrateRecipes(
+      store.get(created.id)!.recipes,
+      (batch) => backend.drawVisuals(batch),
+      undefined,
+      fetchPexelsPhoto,
+    );
     console.log(`${drawn.drawn.length} dessinée(s)${drawn.rejected.length ? `, ${drawn.rejected.length} sans dessin${drawn.error ? ` (${drawn.error})` : ""}` : ""}`);
   }
   console.log();
